@@ -14,26 +14,51 @@ class Lattice():
         self.Hc = Hc
         
     def square(self):
-        grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1))
-        print(grid)
-        grid = grid.tolist()
+        grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 5))        
         for x in range(0, 2*self.unit_cells_x+1):
             for y in range(0, 2*self.unit_cells_y+1):
                 #print(x,y)
                 if (x+y)%2 != 0:
                     if y%2 == 0:
-                        grid[x][y] = [x,y,1,0, np.random.normal(loc=self.Hc, scale=0.05*self.Hc, size=None)]
-                        
+                        grid[x,y] = np.array([x,y,1,0, np.random.normal(loc=self.Hc, scale=0.05*self.Hc, size=None)])
                     else:
-                        grid[x][y] = [x,y,0,1,np.random.normal(loc=self.Hc, scale=0.05*self.Hc, size=None)]
+                        grid[x,y] = np.array([x,y,0,1,np.random.normal(loc=self.Hc, scale=0.05*self.Hc, size=None)])
                 else:
-                    grid[x][y] = [x,y,0,0,0]
+                    grid[x,y] = np.array([x,y,0,0,0])
         self.lattice = grid
-        
+
+    def kagome(self):
+        grid = np.zeros((2*self.unit_cells_x+1, 4*self.unit_cells_y+1,5))
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if x%2!=0 and y%4==0:
+                    if (x-1)%4==0:
+                        grid[x,y] = np.array([x,y+2,1,0,np.random.normal(loc=self.Hc, scale=0.05*self.Hc, size=None)])
+                    else:
+                        grid[x,y] = np.array([x,y,1,0,np.random.normal(loc=self.Hc, scale=0.05*self.Hc, size=None)])
+                if x%2 ==0 and (y-1)%4==0:
+                    if x%4==0:
+                        grid[x,y] = np.array([x,y,0.5,(3**0.5/2),np.random.normal(loc=self.Hc, scale=0.05*self.Hc, size=None)])
+                    else:
+                        grid[x,y] = np.array([x,y,-0.5,(3**0.5/2),np.random.normal(loc=self.Hc, scale=0.05*self.Hc, size=None)])
+                if x%2 ==0 and (y-3)%4==0:
+                    if x%4==0:
+                        grid[x,y] = np.array([x,y,-0.5,(3**0.5/2),np.random.normal(loc=self.Hc, scale=0.05*self.Hc, size=None)])
+                    else:
+                        grid[x,y] = np.array([x,y,0.5,(3**0.5/2),np.random.normal(loc=self.Hc, scale=0.05*self.Hc, size=None)])
+
+        self.lattice = grid
+
+
     def graph(self):
         grid = self.lattice
-        grid = sum(grid, [])
-        X, Y, U, V, Z = zip(*grid)
+        print(grid)
+        X = grid[:,:,0].flatten()
+        Y = grid[:,:,1].flatten()
+        U = grid[:,:,2].flatten()
+        V = grid[:,:,3].flatten()
+        Z = grid[:,:,4].flatten()
+        print(X,Y,U,V,Z)
         #X = np.array(X)-0.5
         #Y = np.array(Y)-0.5
         plt.figure('Lattice')
@@ -47,11 +72,10 @@ class Lattice():
 
     def relax(self):
     	grid = self.lattice()
-    	while flipped:
-    		for x in range(0, 2*self.unit_cells_x+1):
-            	for y in range(0, 2*self.unit_cells_y+1):
-
-                  
+    	#while flipped:
+    	#	for x in range(0, 2*self.unit_cells_x+1):
+        #    	for y in range(0, 2*self.unit_cells_y+1):
+              
     def dipole(self, m, r, r0):
         """Calculate a field in point r created by a dipole moment m located in r0.
         Spatial components are the outermost axis of r and returned B.
@@ -82,8 +106,38 @@ class Lattice():
         
         # include the physical constant
         B *= 1e-7
-        print B
-        return B
+        print(B)
+        return(B)
+
+    def Hlocal2(self, x,y,n =1):
+        Hl = []
+        x1 = x - 2*n
+        x2 = x +2*n
+        y1 = y-2*n
+        y2 = y+2*n
+        print(x1<0)
+        if x1<0:
+            x1 = 0
+            print(x1)
+        if x2>self.side_len_x:
+            x2 = self.side_len_x -1
+        if y1<0:
+            y1 = 0
+        if y2>self.side_len_y-1:
+            y2 = self.side_len_y-1
+        temp = self.lattice
+        grid = np.array(self.lattice)[x1:x2+1,y1:y2+1,:]
+        m = grid[:,:,2:4]
+        m = m.reshape(-1, m.shape[-1])
+        r = grid[:,:,0:2]
+        r = r.reshape(-1, r.shape[-1])
+        r0 = self.lattice[x,y,0:2]
+        for pos, mag in zip(r, m):
+            if np.linalg.norm(pos-r0)/(n+1)<=1.0 and np.array_equal(pos, r0)!=True:
+                Hl.append(self.dipole(mag, r0, pos))
+                print(Hl, pos, mag, np.linalg.norm(pos-r0)/(n+1))
+        return(sum(Hl))
+        #print(np.array(grid))
      
     def Hlocal(self,x,y,n=1):
         grid = self.lattice
@@ -111,11 +165,11 @@ test = Lattice(3,3)
 test.square()
 #grid= test.returnLattice()
 #print grid
-test.graph()
+#test.graph()
 
 #print(test.dipole(np.array([0.0,1.0]), np.array([1.0,1.0]),np.array([0.0,0.0])))
-
-
+print (test.Hlocal2(3,2, n=1))
+print()
 #print(test.dipole(np.array([0,1]), np.array([1,1]),np.array([0,0])))
 
 print(test.Hlocal(3,2))
