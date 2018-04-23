@@ -52,13 +52,11 @@ class Lattice():
 
     def graph(self):
         grid = self.lattice
-        print(grid)
         X = grid[:,:,0].flatten()
         Y = grid[:,:,1].flatten()
         U = grid[:,:,2].flatten()
         V = grid[:,:,3].flatten()
         Z = grid[:,:,4].flatten()
-        print(X,Y,U,V,Z)
         #X = np.array(X)-0.5
         #Y = np.array(Y)-0.5
         plt.figure('Lattice')
@@ -70,8 +68,25 @@ class Lattice():
         plt.show()
 
 
-    def relax(self):
-    	grid = self.lattice()
+    def relax(self, Happlied = np.array([0.,0.])):
+        grid = self.lattice
+        unrelaxed = True
+        while unrelaxed==True:
+            flipcount = 0
+            for x in range(0, self.side_len_x):
+                for y in range(0, self.side_len_y):
+                    if grid[x,y,2] == 1:
+                        if abs(Happlied[1]+self.Hlocal2(x,y, n=10)[1])>grid[x,y,4]:
+                            grid[x,y,2:4]=-1.*grid[x,y,2:4]
+                            flipcount +=1
+                    if grid[x,y,3] == 1:
+                        if abs(Happlied[0]+self.Hlocal2(x,y, n=10)[0])>grid[x,y,4]:
+                            grid[x,y,2:4]=-1.*grid[x,y,2:4]
+                            flipcount +=1
+            print(flipcount)
+            if flipcount==0:
+                unrelaxed = False
+        self.lattice = grid
     	#while flipped:
     	#	for x in range(0, 2*self.unit_cells_x+1):
         #    	for y in range(0, 2*self.unit_cells_y+1):
@@ -106,7 +121,7 @@ class Lattice():
         
         # include the physical constant
         B *= 1e-7
-        print(B)
+        #print(B)
         return(B)
 
     def Hlocal2(self, x,y,n =1):
@@ -115,10 +130,9 @@ class Lattice():
         x2 = x +2*n
         y1 = y-2*n
         y2 = y+2*n
-        print(x1<0)
+        #print(x1<0)
         if x1<0:
             x1 = 0
-            print(x1)
         if x2>self.side_len_x:
             x2 = self.side_len_x -1
         if y1<0:
@@ -135,7 +149,6 @@ class Lattice():
         for pos, mag in zip(r, m):
             if np.linalg.norm(pos-r0)/(n+1)<=1.0 and np.array_equal(pos, r0)!=True:
                 Hl.append(self.dipole(mag, r0, pos))
-                print(Hl, pos, mag, np.linalg.norm(pos-r0)/(n+1))
         return(sum(Hl))
         #print(np.array(grid))
      
@@ -156,20 +169,76 @@ class Lattice():
             Hl += self.dipole(grid[x+2][y][2:4], grid[x][y][0:2], grid[x+2][y][0:2])
             Hl += self.dipole(grid[x-2][y][2:4], grid[x][y][0:2], grid[x-2][y][0:2])
         return Hl
-              
+
+
+    def randomMag(self):
+        grid = self.lattice
+        for x in grid:
+            for y in x:
+                if np.random.rand()>0.5:
+                    y[2:4]=-1.*y[2:4]
+        self.lattice = grid
+
+    def compare(self, Lattice1, Lattice2):
+        total = 0
+        same = 0
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if Lattice1[x,y,4]!=0:
+                    if np.array_equal(Lattice1[x,y, 2:4], Lattice2[x,y,2:4]) ==True:
+                        same+=1
+                    total +=1
+        print(same)
+        print(total)
+        return(same/total)
+
     def returnLattice(self):
         return self.lattice
+
+
                 
 
-test = Lattice(3,3)
+test = Lattice(20,20)
 test.square()
 #grid= test.returnLattice()
 #print grid
-#test.graph()
+test.graph()
 
 #print(test.dipole(np.array([0.0,1.0]), np.array([1.0,1.0]),np.array([0.0,0.0])))
-print (test.Hlocal2(3,2, n=1))
+localfield = []
+for num in np.arange(1, 20, 1):
+    localfield.append(np.linalg.norm(test.Hlocal2(9,9, n = num)))
+print(localfield)
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.plot(np.arange(1, 20, 1), localfield)
+plt.title('Local field Calculation')
+plt.ylabel(r'Local Field Strength (T)')
+plt.xlabel(r'Number of Unit Cells')
 print()
+
+test.randomMag()
+test.graph()
+localfield = []
+for num in np.arange(1, 20, 1):
+    localfield.append(np.linalg.norm(test.Hlocal2(9,9, n = num)))
+print(localfield)
+fig2 = plt.figure(2)
+ax2 = fig2.add_subplot(111)
+ax2.plot(np.arange(1, 20, 1), localfield)
+plt.title('Local field Calculation')
+plt.ylabel(r'Local Field Strength (T)')
+plt.xlabel(r'Number of Unit Cells')
+beforerelax = test.returnLattice()
+test.relax(Happlied = [-0.03,-0.03])
+print('this graph')
+test.graph()
+after = test.returnLattice()
+print(test.compare(after, beforerelax))
+
+test2 =Lattice(20,20)
+test2.kagome()
+test2.graph()
 #print(test.dipole(np.array([0,1]), np.array([1,1]),np.array([0,0])))
 
-print(test.Hlocal(3,2))
+#print(test.Hlocal(3,2))
