@@ -94,7 +94,7 @@ class Lattice():
         norm = Normalize()
         norm.autoscale(Z)
         colormap = cm.inferno
-        plt.figure('Lattice')
+        plt.figure()
         ax = plt.gca()
         ax.quiver(X, Y, U, V, color=colormap(norm(Z)), angles='xy', scale_units='xy', scale=1, pivot = 'mid')
         ax.set_xlim([-1, self.side_len_x])
@@ -234,15 +234,17 @@ class Lattice():
 
 
 
-
+#testing code
                 
 
 test = Lattice(20,20)
 test.square()
 #grid= test.returnLattice()
 #print grid
+"""
 test.graph()
-
+"""
+"""
 #print(test.dipole(np.array([0.0,1.0]), np.array([1.0,1.0]),np.array([0.0,0.0])))
 localfield = []
 for num in np.arange(1, 20, 1):
@@ -255,9 +257,10 @@ plt.title('Local field Calculation')
 plt.ylabel(r'Local Field Strength (T)')
 plt.xlabel(r'Number of Unit Cells')
 print()
+"""
 
 test.randomMag()
-test.graph()
+#test.graph()
 localfield = []
 for num in np.arange(1, 20, 1):
     localfield.append(np.linalg.norm(test.Hlocal2(9,9, n = num)))
@@ -275,9 +278,9 @@ test.graph()
 after = test.returnLattice()
 print(test.correlation(after, beforerelax))
 
-test2 =Lattice(20,20)
-test2.kagome()
-test2.graph()
+#test2 =Lattice(20,20)
+#test2.kagome()
+#test2.graph()
 #print(test.dipole(np.array([0,1]), np.array([1,1]),np.array([0,0])))
 
 #print(test.Hlocal(3,2))
