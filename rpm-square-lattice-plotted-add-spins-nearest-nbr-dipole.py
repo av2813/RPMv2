@@ -2,9 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.colors import Normalize
+import copy
 
 
-class Lattice():
+class ASI_RPM():
     def __init__(self, unit_cells_x, unit_cells_y, bar_length = 1e-6, vertex_gap = 1e-7, bar_thickness = 10e-9, bar_width = 100e-9, magnetisation = 800e3):
         self.lattice = None
         self.unit_cells_x = unit_cells_x
@@ -102,30 +103,73 @@ class Lattice():
         plt.draw()
         plt.show()
 
-
-    def relax(self, Happlied = np.array([0.,0.])):
+    def relax(self, Happlied = np.array([0.,0.]), n=10):
         '''
         Steps through all the 
         '''
-        grid = self.lattice
+        print("relax thinks Happ is =", Happlied)
+        grid = copy.deepcopy(self.lattice)
+        #print grid
         unrelaxed = True
         while unrelaxed==True:
             flipcount = 0
             for x in range(0, self.side_len_x):
                 for y in range(0, self.side_len_y):
-                    if grid[x,y,2] == 1:
-                        if abs(Happlied[1]+self.Hlocal2(x,y, n=10)[1])>grid[x,y,4]:
-                            grid[x,y,2:4]=-1.*grid[x,y,2:4]
-                            flipcount +=1
-                    if grid[x,y,3] == 1:
-                        if abs(Happlied[0]+self.Hlocal2(x,y, n=10)[0])>grid[x,y,4]:
-                            grid[x,y,2:4]=-1.*grid[x,y,2:4]
-                            flipcount +=1
-            print(flipcount)
+                    if abs(grid[x,y,2]) == 1:
+                        fieldx = Happlied[0]+self.Hlocal2(x,y, n=n)[0]
+                        if np.sign(grid[x,y,2]) != np.sign(fieldx):
+                            if abs(fieldx) > grid[x,y,4]:
+                                grid[x,y,2:4]=np.negative(grid[x,y,2:4])
+                                flipcount +=1
+                    if abs(grid[x,y,3]) == 1:
+                        fieldy = Happlied[1]+self.Hlocal2(x,y, n=n)[1]
+                        if np.sign(grid[x,y,3]) != np.sign(fieldy):
+                            if abs(fieldy) > grid[x,y,4]:
+                                grid[x,y,2:4]=np.negative(grid[x,y,2:4])
+                                flipcount +=1
+                    #     if (Happlied[0]+self.Hlocal2(x,y, n=n)[0])>grid[x,y,2]*grid[x,y,4]:
+                    #         print('local field and coercive field = ',np.absolute(Happlied[0]+self.Hlocal2(x,y, n=n)[0]), grid[x,y,4])
+                    #         grid[x,y,2:4]=np.negative(grid[x,y,2:4])
+                    #         flipcount +=1
+                    # if abs(grid[x,y,3]) == 1:
+                    #     if np.absolute(Happlied[1]+self.Hlocal2(x,y, n=n)[1])>grid[x,y,4]:
+                    #         print('local field and coercive field = ',np.absolute(Happlied[0]+self.Hlocal2(x,y, n=n)[0]), grid[x,y,4])
+                    #         grid[x,y,2:4]=np.negative(grid[x,y,2:4])
+                    #         flipcount +=1
+            print("no of flipped spins in relax", flipcount)
             if flipcount==0:
                 unrelaxed = False
         self.lattice = grid
-              
+        
+    def fieldsweep(self, Hmax, steps, Htheta, n=10, loops=1):
+        M0 = copy.deepcopy(self)
+        self.graph()
+        Htheta = np.pi*Htheta/180
+        q = []
+        #steps = Hmax/Hdelta
+        #Hmax = [Hmax*np.cos(Htheta),Hmax*np.sin(Htheta)]
+        print ("Hmax = ",Hmax)
+        #Hdelta =np.array([Hdelta*np.cos(Htheta),Hdelta*np.sin(Htheta)])
+        #Hx_list = np.linspace(0, Hmax[0], Hmax[0]/Hdelta[0])
+        #Hy_list = np.linspace(0, Hmax[1], Hmax[1]/Hdelta[1])
+        #print ("deltaH = ",Hdelta)
+        for i in range(0, loops):
+            print ("i = ",i)
+            for j in np.linspace(-Hmax,Hmax,steps):
+                print ("j = ", j)
+                Happlied = j*np.array([np.cos(Htheta),np.sin(Htheta)])
+                print('Happlied: ', Happlied)
+                self.relax(Happlied,n)
+                #self.relax([Hx, Hy],n)
+            self.graph()
+            q.append(self.correlation(M0,self))
+            print ("q =",q)
+            #self.graph()
+        return q
+    
+    #for Hx, Hy in np.meshgrid(Hx_list, Hy_list, sparse = True):
+    #np.meshgrid(Hx_list, Hy_list, sparse = True):
+        
     def dipole(self, m, r, r0):
         """Calculate a field in point r created by a dipole moment m located in r0.
         Spatial components are the outermost axis of r and returned B.
@@ -201,18 +245,42 @@ class Lattice():
                     y[2:4]=-1.*y[2:4]
         self.lattice = grid
 
-    def correlation(self, Lattice1, Lattice2):
+    def correlation(self, lattice1, lattice2):
+        l1 = lattice1.returnLattice()
+        l2 = lattice2.returnLattice()
         total = 0
         same = 0
         for x in range(0, self.side_len_x):
             for y in range(0, self.side_len_y):
-                if Lattice1[x,y,4]!=0:
-                    if np.array_equal(Lattice1[x,y, 2:4], Lattice2[x,y,2:4]) ==True:
-                        same+=1
-                    total +=1
-        print(same)
-        print(total)
+                if l1[x,y,4]!=0:
+                    if np.array_equal(l1[x,y, 2:4], l2[x,y,2:4]) ==True:
+                        same+=1.0
+                        #print("same running total",same)
+                    total +=1.0
+                    #print("total running total",total)
+        print("same total",same)
+        print("absolute total", total)
         return(same/total)
+        
+    """
+    def correlation(self, lattice1, lattice2):
+        l1 = lattice1.returnLattice()
+        l2 = lattice2..returnLattice()
+        total = 0
+        same = 0
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if lattice1[x,y,4]!=0:
+                    if np.array_equal(lattice1[x,y, 2:4], lattice2[x,y,2:4]) ==True:
+                        same+=1.0
+                        print("same running total",same)
+                    total +=1.0
+                    print("total running total",total)
+        print("same total",same)
+        print("absolute total", total)
+        #q 
+        return(same/total)
+    """
 
     def returnLattice(self):
         return self.lattice
@@ -226,7 +294,7 @@ class Lattice():
     def changeVertexgap(self, newvertex_gap):
         self.vertex_gap = newvertex_gap
 
-    def changeMagnetisation(self, newmagnetisation):
+    def changeMagnetisation(self, new_magnetisation):
         self.magnetisation = new_magnetisation
 
 
@@ -237,7 +305,7 @@ class Lattice():
 #testing code
                 
 
-test = Lattice(20,20)
+test = ASI_RPM(10,10)
 test.square()
 #grid= test.returnLattice()
 #print grid
@@ -259,24 +327,31 @@ plt.xlabel(r'Number of Unit Cells')
 print()
 """
 
-test.randomMag()
+#test.randomMag()
 #test.graph()
-localfield = []
-for num in np.arange(1, 20, 1):
-    localfield.append(np.linalg.norm(test.Hlocal2(9,9, n = num)))
-print(localfield)
-fig2 = plt.figure(2)
-ax2 = fig2.add_subplot(111)
-ax2.plot(np.arange(1, 20, 1), localfield)
-plt.title('Local field Calculation')
-plt.ylabel(r'Local Field Strength (T)')
-plt.xlabel(r'Number of Unit Cells')
-beforerelax = test.returnLattice()
-test.relax(Happlied = [-0.03,-0.03])
-print('this graph')
-test.graph()
-after = test.returnLattice()
-print(test.correlation(after, beforerelax))
+#localfield = []
+#for num in np.arange(1, 20, 1):
+#    localfield.append(np.linalg.norm(test.Hlocal2(9,9, n = num)))
+#print(localfield)
+#fig2 = plt.figure(2)
+#ax2 = fig2.add_subplot(111)
+#ax2.plot(np.arange(1, 20, 1), localfield)
+#plt.title('Local field Calculation')
+#plt.ylabel(r'Local Field Strength (T)')
+#plt.xlabel(r'Number of Unit Cells')
+#beforerelax = copy.deepcopy(test)
+#beforerelax.graph()
+#test.relax(Happlied = [-0.03,-0.03])
+#print('test',test)
+#after = copy.deepcopy(test)
+#after.graph()
+#print("before relax", beforerelax.returnLattice())
+#print("after relax", after.returnLattice())
+#beforerelax.graph()
+#after.graph()
+test.randomMag()
+#print(test.correlation(after.returnLattice(), beforerelax.returnLattice()))
+#print(test.correlation(after, beforerelax))
 
 #test2 =Lattice(20,20)
 #test2.kagome()
@@ -284,3 +359,15 @@ print(test.correlation(after, beforerelax))
 #print(test.dipole(np.array([0,1]), np.array([1,1]),np.array([0,0])))
 
 #print(test.Hlocal(3,2))
+test.changeMagnetisation(800e3)
+q = test.fieldsweep(0.0296/np.cos(np.pi/4),5,45, n = 5, loops = 4)
+fig_q = plt.figure()
+ax2 = fig_q.add_subplot(111)
+ax2.plot(np.arange(0, len(q), 1), q,'o')
+plt.title('Correlation Function')
+plt.ylabel(r'Correlation')
+plt.xlabel(r'Number of loops')
+plt.show()
+
+#test.relax(Happlied = [0.03,0.03])
+#test.graph()
