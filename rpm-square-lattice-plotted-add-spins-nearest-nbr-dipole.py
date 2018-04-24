@@ -4,9 +4,9 @@ import matplotlib.cm as cm
 from matplotlib.colors import Normalize
 
 
-class Lattice():
-    def __init__(self, unit_cells_x, unit_cells_y, bar_length = 1e-6, vertex_gap = 1e-7, bar_thickness = 10e-9, bar_width = 100e-9, magnetisation = 800e3):
-        self.lattice = None
+class ASI_RPM():
+    def __init__(self, unit_cells_x, unit_cells_y,lattice = None, bar_length = 1e-6, vertex_gap = 1e-7, bar_thickness = 10e-9, bar_width = 100e-9, magnetisation = 800e3):
+        self.lattice = lattice
         self.unit_cells_x = unit_cells_x
         self.unit_cells_y = unit_cells_y
         self.side_len_x = None      #The side length is now defined in the 
@@ -103,7 +103,7 @@ class Lattice():
         plt.show()
 
 
-    def relax(self, Happlied = np.array([0.,0.])):
+    def relax(self, Happlied = np.array([0.,0.]), num = 5):
         '''
         Steps through all the 
         '''
@@ -114,11 +114,11 @@ class Lattice():
             for x in range(0, self.side_len_x):
                 for y in range(0, self.side_len_y):
                     if grid[x,y,2] == 1:
-                        if abs(Happlied[1]+self.Hlocal2(x,y, n=10)[1])>grid[x,y,4]:
+                        if abs(Happlied[1]+self.Hlocal2(x,y, n=num)[1])>grid[x,y,4]:
                             grid[x,y,2:4]=-1.*grid[x,y,2:4]
                             flipcount +=1
                     if grid[x,y,3] == 1:
-                        if abs(Happlied[0]+self.Hlocal2(x,y, n=10)[0])>grid[x,y,4]:
+                        if abs(Happlied[0]+self.Hlocal2(x,y, n=num)[0])>grid[x,y,4]:
                             grid[x,y,2:4]=-1.*grid[x,y,2:4]
                             flipcount +=1
             print(flipcount)
@@ -201,13 +201,13 @@ class Lattice():
                     y[2:4]=-1.*y[2:4]
         self.lattice = grid
 
-    def correlation(self, Lattice1, Lattice2):
+    def correlation(self, lattice1, lattice2):
         total = 0
         same = 0
         for x in range(0, self.side_len_x):
             for y in range(0, self.side_len_y):
-                if Lattice1[x,y,4]!=0:
-                    if np.array_equal(Lattice1[x,y, 2:4], Lattice2[x,y,2:4]) ==True:
+                if lattice1[x,y,4]!=0:
+                    if np.array_equal(lattice1[x,y,2:4], lattice2[x,y,2:4])==True:
                         same+=1
                     total +=1
         print(same)
@@ -215,7 +215,8 @@ class Lattice():
         return(same/total)
 
     def returnLattice(self):
-        return self.lattice
+        grid = self.lattice
+        return(grid)
 
     def switchBar(self, x,y):
         self.lattice[x,y, 2:4] *= -1
@@ -237,7 +238,7 @@ class Lattice():
 #testing code
                 
 
-test = Lattice(20,20)
+test = ASI_RPM(20,20)
 test.square()
 #grid= test.returnLattice()
 #print grid
@@ -259,7 +260,7 @@ plt.xlabel(r'Number of Unit Cells')
 print()
 """
 
-test.randomMag()
+
 #test.graph()
 localfield = []
 for num in np.arange(1, 20, 1):
@@ -271,12 +272,17 @@ ax2.plot(np.arange(1, 20, 1), localfield)
 plt.title('Local field Calculation')
 plt.ylabel(r'Local Field Strength (T)')
 plt.xlabel(r'Number of Unit Cells')
-beforerelax = test.returnLattice()
+
+
+test.randomMag()
+before_lattice = test.returnLattice()
+before = ASI_RPM(20,20, lattice = before_lattice)
 test.relax(Happlied = [-0.03,-0.03])
 print('this graph')
-test.graph()
-after = test.returnLattice()
-print(test.correlation(after, beforerelax))
+#test.graph()
+after_lattice = test.returnLattice()
+after = ASI_RPM(20,20, lattice = after_lattice)
+print(test.correlation(after.returnLattice(), beforerelax.returnLattice()))
 
 #test2 =Lattice(20,20)
 #test2.kagome()
