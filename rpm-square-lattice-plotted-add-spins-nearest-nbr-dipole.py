@@ -115,18 +115,12 @@ class ASI_RPM():
             flipcount = 0
             for x in range(0, self.side_len_x):
                 for y in range(0, self.side_len_y):
-                    if abs(grid[x,y,2]) == 1:
-                        fieldx = Happlied[0]+self.Hlocal2(x,y, n=n)[0]
-                        if np.sign(grid[x,y,2]) != np.sign(fieldx):
-                            if abs(fieldx) > grid[x,y,4]:
-                                grid[x,y,2:4]=np.negative(grid[x,y,2:4])
-                                flipcount +=1
-                    if abs(grid[x,y,3]) == 1:
-                        fieldy = Happlied[1]+self.Hlocal2(x,y, n=n)[1]
-                        if np.sign(grid[x,y,3]) != np.sign(fieldy):
-                            if abs(fieldy) > grid[x,y,4]:
-                                grid[x,y,2:4]=np.negative(grid[x,y,2:4])
-                                flipcount +=1
+                    if abs(grid[x,y,4]) != 0:
+                        unit_vector = grid[x,y,2:4]/np.linalg.norm(grid[x,y,2:4])
+                        field = np.dot(np.array(Happlied+self.Hlocal2(x,y, n=n)), unit_vector)
+                        if field < -grid[x,y,4]:
+                            grid[x,y,2:4]=np.negative(grid[x,y,2:4])
+                            flipcount +=1
                     #     if (Happlied[0]+self.Hlocal2(x,y, n=n)[0])>grid[x,y,2]*grid[x,y,4]:
                     #         print('local field and coercive field = ',np.absolute(Happlied[0]+self.Hlocal2(x,y, n=n)[0]), grid[x,y,4])
                     #         grid[x,y,2:4]=np.negative(grid[x,y,2:4])
