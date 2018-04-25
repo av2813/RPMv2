@@ -96,7 +96,7 @@ class ASI_RPM():
         colormap = cm.jet
         plt.figure()
         ax = plt.gca()
-        ax.quiver(X, Y, Mx, My, color=colormap(norm(C)),linewidth = 0.5*Hc, angles='xy', scale_units='xy', scale=1, pivot = 'mid')
+        ax.quiver(X, Y, Mx, My, color=colormap(norm(C)),linewidth = norm(Hc), angles='xy', scale_units='xy', scale=1, pivot = 'mid')
         ax.set_xlim([-1, self.side_len_x])
         ax.set_ylim([-1, self.side_len_y])
         plt.draw()
@@ -156,7 +156,7 @@ class ASI_RPM():
         self.lattice = grid
         
     def fieldsweep(self, Hmax, steps, Htheta, n=10, loops=1):
-        Hmax = np.mean(grid[:,:,4].flatten())*Hamx
+        Hmax = np.mean(self.lattice[:,:,4].flatten())*Hmax
         M0 = copy.deepcopy(self)
         self.graph()
         Htheta = np.pi*Htheta/180
