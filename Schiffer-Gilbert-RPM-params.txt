@@ -1,0 +1,8 @@
+Hc = 65 mT
+
+Hc st dev = 5% of the mean, = 3.25 mT
+
+Best RPM results at Hmax/Hc: 
+
+EXPERIMENT = 1.062, 0.949 
+SIMULATION = 1.062, 0.951
