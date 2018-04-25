@@ -96,15 +96,15 @@ class ASI_RPM():
         norm = cl.Normalize()
         norm.autoscale(C)
         Hc = (Hc-np.mean(Hc))/(max(Hc)-min(Hc))
-        plt.set_cmap(cm.jet)
-        colormap = cm.coolwarm
+        
+        
         fig =plt.figure()
         ax = plt.gca()
         graph = ax.quiver(X, Y, Mx, My, C, linewidth = Hc, angles='xy', scale_units='xy', scale=1, pivot = 'mid')
         ax.set_xlim([-1, self.side_len_x])
         ax.set_ylim([-1, self.side_len_y])
-        cbar =  cl.ListedColormap(plt.cm.coolwarm(np.linspace(min(C),max(C),max(C)-min(C)/10)))
         plt.colorbar(graph)
+        plt.set_cmap(cm.jet)
         plt.draw()
         plt.show()
 
@@ -123,6 +123,11 @@ class ASI_RPM():
 
 
     def subtractCount(self, lattice1, lattice2):
+        '''
+        Haven't actually tested yet.
+        Should take two instances of the ASI_RPM class and then return the difference between the number of spins flipped
+        
+        '''
         l1 = lattice1.returnLattice()
         l2 = lattice2.returnLattice()
         diff = l2[:,:,5] - l1[:,:,5]
