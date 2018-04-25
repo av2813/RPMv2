@@ -289,7 +289,10 @@ class ASI_RPM():
         #q 
         return(same/total)
     """
+    def removeBar(self,x, y):
+        self.lattice[x,y,:] = np.array([0,0,0,0,0])
 
+        
     def returnLattice(self):
         return self.lattice
 

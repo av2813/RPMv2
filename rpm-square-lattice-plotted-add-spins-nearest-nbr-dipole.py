@@ -101,7 +101,7 @@ class ASI_RPM():
         ax.set_xlim([-1, self.side_len_x])
         ax.set_ylim([-1, self.side_len_y])
         plt.draw()
-        plt.show()
+        #plt.show()
 
     def relax(self, Happlied = np.array([0.,0.]), n=10):
         '''
@@ -140,6 +140,7 @@ class ASI_RPM():
         self.graph()
         Htheta = np.pi*Htheta/180
         q = []
+        q_test = []
         #steps = Hmax/Hdelta
         #Hmax = [Hmax*np.cos(Htheta),Hmax*np.sin(Htheta)]
         print ("Hmax = ",Hmax)
@@ -155,11 +156,12 @@ class ASI_RPM():
                 print('Happlied: ', Happlied)
                 self.relax(Happlied,n)
                 #self.relax([Hx, Hy],n)
+                q_test.append(self.correlation(M0,self))
             self.graph()
             q.append(self.correlation(M0,self))
             print ("q =",q)
             #self.graph()
-        return q
+        return q, q_test
     
     #for Hx, Hy in np.meshgrid(Hx_list, Hy_list, sparse = True):
     #np.meshgrid(Hx_list, Hy_list, sparse = True):
@@ -231,11 +233,12 @@ class ASI_RPM():
         return Hl
 
 
-    def randomMag(self):
+    def randomMag(self, seed = None):
+        State = np.random.RandomState(seed=seed)
         grid = self.lattice
         for x in grid:
             for y in x:
-                if np.random.rand()>0.5:
+                if State.uniform(low=0.0, high=1.0)>0.5:
                     y[2:4]=-1.*y[2:4]
         self.lattice = grid
 
@@ -300,7 +303,9 @@ class ASI_RPM():
                 
 
 test = ASI_RPM(10,10)
-test.square()
+test.kagome()
+test2 = ASI_RPM(10,10)
+test2.kagome()
 #grid= test.returnLattice()
 #print grid
 """
@@ -343,7 +348,11 @@ print()
 #print("after relax", after.returnLattice())
 #beforerelax.graph()
 #after.graph()
-test.randomMag()
+test.randomMag(100)
+test2.randomMag(100)
+test2.graph()
+test.graph()
+plt.show()
 #print(test.correlation(after.returnLattice(), beforerelax.returnLattice()))
 #print(test.correlation(after, beforerelax))
 
@@ -353,11 +362,11 @@ test.randomMag()
 #print(test.dipole(np.array([0,1]), np.array([1,1]),np.array([0,0])))
 
 #print(test.Hlocal(3,2))
-test.changeMagnetisation(800e3)
-q = test.fieldsweep(0.0296/np.cos(np.pi/4),5,45, n = 5, loops = 4)
+#test.changeMagnetisation(800e7)
+q,q_test = test.fieldsweep(0.0296/np.cos(np.pi/4),20,45, n = 7, loops = 2)
 fig_q = plt.figure()
 ax2 = fig_q.add_subplot(111)
-ax2.plot(np.arange(0, len(q), 1), q,'o')
+ax2.plot(np.arange(0, len(q_test), 1), q_test,'o')
 plt.title('Correlation Function')
 plt.ylabel(r'Correlation')
 plt.xlabel(r'Number of loops')
