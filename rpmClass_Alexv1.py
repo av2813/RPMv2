@@ -1,12 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from matplotlib.colors import Normalize
+import matplotlib.colors as cl
+#from matplotlib.colors import Normalize
 import copy
 
 
+
 class ASI_RPM():
-    def __init__(self, unit_cells_x, unit_cells_y, lattice = None, bar_length = 1e-6, vertex_gap = 1e-7, bar_thickness = 10e-9, bar_width = 100e-9, magnetisation = 800e3):
+    def __init__(self, unit_cells_x, unit_cells_y, lattice = None, bar_length = 220e-9, vertex_gap = 1e-8, bar_thickness = 25e-9, bar_width = 80e-9, magnetisation = 800e3):
         self.lattice = lattice
         self.unit_cells_x = unit_cells_x
         self.unit_cells_y = unit_cells_y
@@ -91,14 +93,18 @@ class ASI_RPM():
         My = grid[:,:,3].flatten()
         Hc = grid[:,:,4].flatten()
         C = grid[:,:,5].flatten()
-        norm = Normalize()
-        norm.autoscale(Hc)
-        colormap = cm.jet
-        plt.figure()
+        norm = cl.Normalize()
+        norm.autoscale(C)
+        Hc = (Hc-np.mean(Hc))/(max(Hc)-min(Hc))
+        plt.set_cmap(cm.jet)
+        colormap = cm.coolwarm
+        fig =plt.figure()
         ax = plt.gca()
-        ax.quiver(X, Y, Mx, My, color=colormap(norm(C)),linewidth = norm(Hc), angles='xy', scale_units='xy', scale=1, pivot = 'mid')
+        graph = ax.quiver(X, Y, Mx, My, C, linewidth = Hc, angles='xy', scale_units='xy', scale=1, pivot = 'mid')
         ax.set_xlim([-1, self.side_len_x])
         ax.set_ylim([-1, self.side_len_y])
+        cbar =  cl.ListedColormap(plt.cm.coolwarm(np.linspace(min(C),max(C),max(C)-min(C)/10)))
+        plt.colorbar(graph)
         plt.draw()
         plt.show()
 
@@ -156,7 +162,7 @@ class ASI_RPM():
         self.lattice = grid
         
     def fieldsweep(self, Hmax, steps, Htheta, n=10, loops=1):
-        Hmax = np.mean(self.lattice[:,:,4].flatten())*Hmax
+        #Hmax = np.mean(self.lattice[:,:,4].flatten())*Hmax
         M0 = copy.deepcopy(self)
         self.graph()
         Htheta = np.pi*Htheta/180
@@ -177,7 +183,7 @@ class ASI_RPM():
                 print('Happlied: ', Happlied)
                 self.relax(Happlied,n)
                 #self.relax([Hx, Hy],n)
-                q_test.append(self.correlation(M0,self))
+            q_test.append(self.correlation(M0,self))
             self.graph()
             q.append(self.correlation(M0,self))
             print ("q =",q)
@@ -196,8 +202,8 @@ class ASI_RPM():
         r0 = np.array(r0)
         m = self.magnetisation*self.bar_length*self.bar_width*self.bar_thickness*m
         
-        r = 1e-6*r
-        r0 = 1e-6*r0
+        r = (self.vertex_gap+self.bar_length/2)*r
+        r0 = (self.vertex_gap+self.bar_length/2)*r0
         # we use np.subtract to allow r and r0 to be a python lists, not only np.array
         R = np.subtract(np.transpose(r), r0).T
         # assume that the spatial components of r are the outermost axis
@@ -369,10 +375,8 @@ print()
 #print("after relax", after.returnLattice())
 #beforerelax.graph()
 #after.graph()
-test.randomMag(100)
-test2.randomMag(100)
-test2.graph()
-test.graph()
+test.randomMag()
+
 plt.show()
 #print(test.correlation(after.returnLattice(), beforerelax.returnLattice()))
 #print(test.correlation(after, beforerelax))
@@ -383,8 +387,8 @@ plt.show()
 #print(test.dipole(np.array([0,1]), np.array([1,1]),np.array([0,0])))
 
 #print(test.Hlocal(3,2))
-test.changeMagnetisation(800e7)
-q,q_test = test.fieldsweep(0.05/np.cos(np.pi/4),5,45, n = 5, loops = 3)
+#test.changeMagnetisation(800e7)
+q,q_test = test.fieldsweep(0.0297/np.cos(np.pi/4),5,45, n = 5, loops = 3)
 fig_q = plt.figure()
 ax2 = fig_q.add_subplot(111)
 ax2.plot(np.arange(0, len(q_test), 1), q_test,'o')
