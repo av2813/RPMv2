@@ -6,8 +6,8 @@ import copy
 
 
 class ASI_RPM():
-    def __init__(self, unit_cells_x, unit_cells_y, bar_length = 0.22e-6, vertex_gap = 140e-9, bar_thickness = 25e-9, bar_width = 80e-9, magnetisation = 800e3):
-        self.lattice = None
+    def __init__(self, unit_cells_x, unit_cells_y, lattice = None, bar_length = 220e-9, vertex_gap = 140e-9, bar_thickness = 25e-9, bar_width = 80e-9, magnetisation = 800e3):
+        self.lattice = lattice
         self.unit_cells_x = unit_cells_x
         self.unit_cells_y = unit_cells_y
         self.side_len_x = None      #The side length is now defined in the 
@@ -41,16 +41,14 @@ class ASI_RPM():
         '''
         self.side_len_x = 2*self.unit_cells_x+1
         self.side_len_y = 2*self.unit_cells_y+1
-        grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 5))        
+        grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 6))        
         for x in range(0, 2*self.unit_cells_x+1):
             for y in range(0, 2*self.unit_cells_y+1):
                 if (x+y)%2 != 0:
                     if y%2 == 0:
-                        grid[x,y] = np.array([x,y,1,0, np.random.normal(loc=Hc_mean, scale=Hc_std, size=None)])
+                        grid[x,y] = np.array([x,y,1,0, np.random.normal(loc=Hc_mean, scale=Hc_std, size=None),0])
                     else:
-                        grid[x,y] = np.array([x,y,0,1,np.random.normal(loc=Hc_mean, scale=Hc_std, size=None)])
-                else:
-                    grid[x,y] = np.array([x,y,0,0,0])
+                        grid[x,y] = np.array([x,y,0,1,np.random.normal(loc=Hc_mean, scale=Hc_std, size=None),0])
         self.lattice = grid
 
     def kagome(self, Hc_mean = 0.065, Hc_std = 0.05*0.065):
@@ -61,24 +59,24 @@ class ASI_RPM():
         '''
         self.side_len_x = 2*self.unit_cells_x+1
         self.side_len_y = 4*self.unit_cells_y+1
-        grid = np.zeros((2*self.unit_cells_x+1, 4*self.unit_cells_y+1,5))
+        grid = np.zeros((2*self.unit_cells_x+1, 4*self.unit_cells_y+1,6))
         for x in range(0, self.side_len_x):
             for y in range(0, self.side_len_y):
                 if x%2!=0 and y%4==0:
                     if (x-1)%4==0:
-                        grid[x,y] = np.array([x,y+2,1,0,np.random.normal(loc=Hc_mean, scale=Hc_std, size=None)])
+                        grid[x,y] = np.array([x,y+2,1,0,np.random.normal(loc=Hc_mean, scale=Hc_std, size=None),0])
                     else:
-                        grid[x,y] = np.array([x,y,1,0,np.random.normal(loc=Hc_mean, scale=Hc_std, size=None)])
+                        grid[x,y] = np.array([x,y,1,0,np.random.normal(loc=Hc_mean, scale=Hc_std, size=None),0])
                 if x%2 ==0 and (y-1)%4==0:
                     if x%4==0:
-                        grid[x,y] = np.array([x,y,0.5,(3**0.5/2),np.random.normal(loc=Hc_mean, scale=Hc_std, size=None)])
+                        grid[x,y] = np.array([x,y,0.5,(3**0.5/2),np.random.normal(loc=Hc_mean, scale=Hc_std, size=None),0])
                     else:
-                        grid[x,y] = np.array([x,y,-0.5,(3**0.5/2),np.random.normal(loc=Hc_mean, scale=Hc_std, size=None)])
+                        grid[x,y] = np.array([x,y,-0.5,(3**0.5/2),np.random.normal(loc=Hc_mean, scale=Hc_std, size=None),0])
                 if x%2 ==0 and (y-3)%4==0:
                     if x%4==0:
-                        grid[x,y] = np.array([x,y,-0.5,(3**0.5/2),np.random.normal(loc=Hc_mean, scale=Hc_std, size=None)])
+                        grid[x,y] = np.array([x,y,-0.5,(3**0.5/2),np.random.normal(loc=Hc_mean, scale=Hc_std, size=None),0])
                     else:
-                        grid[x,y] = np.array([x,y,0.5,(3**0.5/2),np.random.normal(loc=Hc_mean, scale=Hc_std, size=None)])
+                        grid[x,y] = np.array([x,y,0.5,(3**0.5/2),np.random.normal(loc=Hc_mean, scale=Hc_std, size=None),0])
         self.lattice = grid
 
 
@@ -89,19 +87,40 @@ class ASI_RPM():
         grid = self.lattice
         X = grid[:,:,0].flatten()
         Y = grid[:,:,1].flatten()
-        U = grid[:,:,2].flatten()
-        V = grid[:,:,3].flatten()
-        Z = grid[:,:,4].flatten()
+        Mx = grid[:,:,2].flatten()
+        My = grid[:,:,3].flatten()
+        Hc = grid[:,:,4].flatten()
+        C = grid[:,:,5].flatten()
         norm = Normalize()
-        norm.autoscale(Z)
-        colormap = cm.inferno
+        norm.autoscale(Hc)
+        colormap = cm.jet
         plt.figure()
         ax = plt.gca()
-        ax.quiver(X, Y, U, V, color=colormap(norm(Z)), angles='xy', scale_units='xy', scale=1, pivot = 'mid')
+        ax.quiver(X, Y, Mx, My, color=colormap(norm(C)),linewidth = norm(Hc), angles='xy', scale_units='xy', scale=1, pivot = 'mid')
         ax.set_xlim([-1, self.side_len_x])
         ax.set_ylim([-1, self.side_len_y])
         plt.draw()
         plt.show()
+
+    def resetCount(self):
+        '''
+        Resets the count parameter in the lattice
+        '''
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                self.lattice[x,y,5] = 0
+
+    def graphCount(self):
+        '''
+        To do
+        '''
+
+
+    def subtractCount(self, lattice1, lattice2):
+        l1 = lattice1.returnLattice()
+        l2 = lattice2.returnLattice()
+        diff = l2[:,:,5] - l1[:,:,5]
+        return(self(self.unit_cells_x, self.unit_cells_y,lattice = diff))
 
     def relax(self, Happlied = np.array([0.,0.]), n=10):
         '''
@@ -120,21 +139,8 @@ class ASI_RPM():
                         field = np.dot(np.array(Happlied+self.Hlocal2(x,y, n=n)), unit_vector)
                         if field < -grid[x,y,4]:
                             grid[x,y,2:4]=np.negative(grid[x,y,2:4])
+                            grid[x,y,5]+=1
                             flipcount +=1
-                    
-                    if abs(grid[x,y,2]) == 1:
-                        fieldx = Happlied[0]+self.Hlocal2(x,y, n=n)[0]
-                        if np.sign(grid[x,y,2]) != np.sign(fieldx):
-                            if abs(fieldx) > grid[x,y,4]:
-                                grid[x,y,2:4]=np.negative(grid[x,y,2:4])
-                                flipcount +=1
-                    if abs(grid[x,y,3]) == 1:
-                        fieldy = Happlied[1]+self.Hlocal2(x,y, n=n)[1]
-                        if np.sign(grid[x,y,3]) != np.sign(fieldy):
-                            if abs(fieldy) > grid[x,y,4]:
-                                grid[x,y,2:4]=np.negative(grid[x,y,2:4])
-                                flipcount +=1
-                    h
                     #     if (Happlied[0]+self.Hlocal2(x,y, n=n)[0])>grid[x,y,2]*grid[x,y,4]:
                     #         print('local field and coercive field = ',np.absolute(Happlied[0]+self.Hlocal2(x,y, n=n)[0]), grid[x,y,4])
                     #         grid[x,y,2:4]=np.negative(grid[x,y,2:4])
@@ -150,13 +156,15 @@ class ASI_RPM():
         self.lattice = grid
         
     def fieldsweep(self, Hmax, steps, Htheta, n=10, loops=1):
+        #Hmax = np.mean(self.lattice[:,:,4].flatten())*Hmax
         M0 = copy.deepcopy(self)
         self.graph()
         Htheta = np.pi*Htheta/180
         q = []
+        q_test = []
         #steps = Hmax/Hdelta
         #Hmax = [Hmax*np.cos(Htheta),Hmax*np.sin(Htheta)]
-        print ("Hmax = ",Hmax)
+        #print ("Hmax = ",Hmax)
         #Hdelta =np.array([Hdelta*np.cos(Htheta),Hdelta*np.sin(Htheta)])
         #Hx_list = np.linspace(0, Hmax[0], Hmax[0]/Hdelta[0])
         #Hy_list = np.linspace(0, Hmax[1], Hmax[1]/Hdelta[1])
@@ -164,16 +172,17 @@ class ASI_RPM():
         for i in range(0, loops):
             print ("i = ",i)
             for j in np.linspace(-Hmax,Hmax,steps):
-                print ("j = ", j)
+                #print ("j = ", j)
                 Happlied = j*np.array([np.cos(Htheta),np.sin(Htheta)])
                 print('Happlied: ', Happlied)
                 self.relax(Happlied,n)
                 #self.relax([Hx, Hy],n)
+                q_test.append(self.correlation(M0,self))
             self.graph()
             q.append(self.correlation(M0,self))
             print ("q =",q)
             #self.graph()
-        return q
+        return q, q_test
     
     #for Hx, Hy in np.meshgrid(Hx_list, Hy_list, sparse = True):
     #np.meshgrid(Hx_list, Hy_list, sparse = True):
@@ -245,11 +254,12 @@ class ASI_RPM():
         return Hl
 
 
-    def randomMag(self):
+    def randomMag(self, seed = None):
+        State = np.random.RandomState(seed=seed)
         grid = self.lattice
         for x in grid:
             for y in x:
-                if np.random.rand()>0.5:
+                if State.uniform(low=0.0, high=1.0)>0.5:
                     y[2:4]=-1.*y[2:4]
         self.lattice = grid
 
@@ -289,10 +299,7 @@ class ASI_RPM():
         #q 
         return(same/total)
     """
-    def removeBar(self,x, y):
-        self.lattice[x,y,:] = np.array([0,0,0,0,0])
 
-        
     def returnLattice(self):
         return self.lattice
 
@@ -316,10 +323,7 @@ class ASI_RPM():
 #testing code
                 
 
-test = ASI_RPM(10,10)
-test.square()
-#grid= test.returnLattice()
-#print grid
+
 """
 test.graph()
 """
@@ -360,7 +364,11 @@ print()
 #print("after relax", after.returnLattice())
 #beforerelax.graph()
 #after.graph()
-test.randomMag()
+
+#test2.randomMag(100)
+#test2.graph()
+#test.graph()
+#plt.show()
 #print(test.correlation(after.returnLattice(), beforerelax.returnLattice()))
 #print(test.correlation(after, beforerelax))
 
@@ -370,11 +378,20 @@ test.randomMag()
 #print(test.dipole(np.array([0,1]), np.array([1,1]),np.array([0,0])))
 
 #print(test.Hlocal(3,2))
-test.changeMagnetisation(800e3)
-q = test.fieldsweep(0.06175/np.cos(np.pi/4),10,45, n = 10, loops = 4)
+#test.changeMagnetisation(800e7)
+
+test = ASI_RPM(8,8)
+test.square()
+test.randomMag(100)
+#test2 = ASI_RPM(10,10)
+#test2.kagome()
+#grid= test.returnLattice()
+#print grid
+
+q,q_test = test.fieldsweep(0.071/np.cos(np.pi/4),5,45, n = 8, loops = 4)
 fig_q = plt.figure()
 ax2 = fig_q.add_subplot(111)
-ax2.plot(np.arange(0, len(q), 1), q,'o')
+ax2.plot(np.arange(0, len(q_test), 1), q_test,'o')
 plt.title('Correlation Function')
 plt.ylabel(r'Correlation')
 plt.xlabel(r'Number of loops')
