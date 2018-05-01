@@ -1,4 +1,4 @@
-import rpmClass_Alexv1 as rpm
+import rpmClass_Alexv2 as rpm
 import os
 import importlib
 import matplotlib.pyplot as plt
@@ -14,17 +14,19 @@ vertex_gap = 1e-8
 bar_thickness = 25e-9
 bar_width = 80e-9
 magnetisation = 800e3
-
+'''
 #Graphing and save/load test
-kagomeLattice = rpm.ASI_RPM(15, 15)
+kagomeLattice = rpm.ASI_RPM(10, 10)
 kagomeLattice.kagome()
 filename = 'KagomeTest.npy'
 kagomeLattice.save(os.path.join(os.getcwd(),filename))
 kagomeLattice.randomMag()
 kagomeLattice.graph()
-kagomeLattice.load(os.path.join(os.getcwd(),filename))
-kagomeLattice.graph()
-
+#kagomeLattice.load(os.path.join(os.getcwd(),filename))
+#kagomeLattice.graph()
+kagomeLattice.fieldplot()
+plt.show()
+'''
 
 #field sweep test, count different test
 angle = 45
@@ -35,7 +37,9 @@ squareLattice = rpm.ASI_RPM(15, 15, bar_length = bar_length,\
 squareLattice.square(Hc_mean=Hc, Hc_std=Hc_std)
 squareLattice.randomMag(100)
 squareLattice.graph()
-q = squareLattice.fieldsweep(Hamp/np.cos(np.pi*angle/180),5,angle, n = 5, loops = 10)
+squareLattice.fieldplot()
+plt.show()
+q = squareLattice.fieldsweep(Hamp/np.cos(np.pi*angle/180),5,angle, n = 5, loops = 1)
 squareLattice.graph()
 
 
