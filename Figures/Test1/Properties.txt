@@ -1,0 +1,15 @@
+ASI properties
+Hc = 0.062
+Hc_std = 0.05
+bar_length = 220e-9
+vertex_gap = 1e-8
+bar_thickness = 25e-9
+bar_width = 80e-9
+magnetisation = 800e3
+
+Field sweep properties
+angle = 45
+Hamp = 0.95*Hc
+
+Initial Conditions
+Random

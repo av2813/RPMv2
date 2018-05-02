@@ -152,6 +152,8 @@ class ASI_RPM():
         '''
         grid = copy.deepcopy(self.lattice)
         unrelaxed = True
+        Happlied[Happlied == -0.] = 0.
+        print(Happlied)
         while unrelaxed == True:
             flipcount = 0
             for x in range(0, self.side_len_x):
@@ -159,14 +161,22 @@ class ASI_RPM():
                     if abs(grid[x,y,6]) != 0:
                         unit_vector = grid[x,y,3:6]/np.linalg.norm(grid[x,y,3:6])
                         field = np.dot(np.array(Happlied+self.Hlocal2(x,y, n=n)), unit_vector)
-                        if field < np.negative((grid[x,y,6])):
+                        #print(field)
+                        if field < -grid[x,y,6]:
+                            #print(grid[x,y,3:5])
                             grid[x,y,3:5] = np.negative(grid[x,y,3:5])
+                            #print(grid[x,y,3:5])
+                            grid[x,y,:][grid[x,y,:]==0.] = 0.
                             grid[x,y,7] += 1
                             flipcount += 1
+                            #print(grid[x,y,3:5])
             print("no of flipped spins in relax", flipcount)
-            if flipcount == 0:
+            grid[grid==-0.] = 0.
+            if flipcount > 0:
+                unrelaxed = True
+            else:
                 unrelaxed = False
-        self.lattice = grid
+            self.lattice = grid
         
     def fieldsweep(self, Hmax, steps, Htheta, n=10, loops=1):
         '''
@@ -176,9 +186,12 @@ class ASI_RPM():
         Htheta = np.pi*Htheta/180
         q = []
         q_test = []
+        field_steps = np.linspace(0,Hmax,steps+1)
+        field_steps = np.append(field_steps, np.linspace(Hmax,-Hmax,2*steps+1))
+        field_steps = np.append(field_steps, np.linspace(-Hmax,0,steps+1))
         for i in range(0, loops):
             #print ("i = ",i)
-            for j in np.linspace(-Hmax,Hmax,steps):
+            for j in field_steps:
                 #print ("j = ", j)
                 Happlied = j*np.array([np.cos(Htheta),np.sin(Htheta), 0.])
                 print('Happlied: ', Happlied)
@@ -225,7 +238,6 @@ class ASI_RPM():
         Hx = field[:,:, 0].flatten()
         Hy = field[:,:, 1].flatten()
         Hz = field[:,:, 2].flatten()
-        print(Hz)
         fig, ax =plt.subplots(ncols = 2,sharex=True, sharey=True)
         plt.set_cmap(cm.jet)
         graph = ax[0].quiver(X, Y, Hx, Hy, angles='xy', scale_units='xy',  pivot = 'mid')
@@ -245,20 +257,21 @@ class ASI_RPM():
         '''
         Working on it
         '''
-        # grid = self.lattice
-        # Hl = []
-        # if col<
-        # x1 = col - 1
-        # x2 = col 
-        # y1 = row
-        # y2 = row
-        # for x in range(0, self.side_len_x):
-        #     for y in range(0, self.side_len_y):
-        #         m1 = grid[x-1,y,2:4]
-        #         m2 = grid[x-1,y+1,2:4]
-        #         m3 = grid[x-1,y-1,2:4]
-        #         m4 = grid[x-2,y,2:4]
-        #         if grid[x,y, 4] != 0:
+        grid = self.lattice
+        Hl = []
+        x1 = col - 1
+        x2 = col 
+        y1 = row
+        y2 = row
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                m1 = grid[x-1,y,2:4]
+                m2 = grid[x-1,y+1,2:4]
+                m3 = grid[x-1,y-1,2:4]
+                m4 = grid[x-2,y,2:4]
+                if grid[x,y, 4] != 0:
+                    print()
+
 
 
 
@@ -289,20 +302,7 @@ class ASI_RPM():
             if np.linalg.norm(pos-r0)/(n+1)<=1.0 and np.array_equal(pos, r0)!=True:
                 Hl.append(self.dipole(mag, r0, pos))
         return(sum(Hl))
-     
-    def Hlocal(self,x,y,n=1):
-        grid = self.lattice
-        Hl = self.dipole(grid[x+1][y+1][2:4], grid[x][y][0:2], grid[x+1][y+1][0:2])
-        Hl += self.dipole(grid[x+1][y-1][2:4], grid[x][y][0:2], grid[x+1][y-1][0:2])
-        Hl += self.dipole(grid[x-1][y+1][2:4], grid[x][y][0:2], grid[x-1][y+1][0:2])
-        Hl += self.dipole(grid[x-1][y-1][2:4], grid[x][y][0:2], grid[x-1][y-1][0:2])
-        if grid[x][y][2] == 0:
-            Hl += self.dipole(grid[x][y+2][2:4], grid[x][y][0:2], grid[x][y+2][0:2])
-            Hl += self.dipole(grid[x][y-2][2:4], grid[x][y][0:2], grid[x][y-2][0:2])
-        else:
-            Hl += self.dipole(grid[x+2][y][2:4], grid[x][y][0:2], grid[x+2][y][0:2])
-            Hl += self.dipole(grid[x-2][y][2:4], grid[x][y][0:2], grid[x-2][y][0:2])
-        return Hl
+
 
 
     def randomMag(self, seed = None):
@@ -368,4 +368,48 @@ class ASI_RPM():
 
 
 
+Hc = 0.062
+Hc_std = 0.05
+bar_length = 220e-9
+vertex_gap = 1e-7
+bar_thickness = 25e-9
+bar_width = 80e-9
+magnetisation = 800e3
+'''
+#Graphing and save/load test
+kagomeLattice = ASI_RPM(10, 10)
+kagomeLattice.kagome()
+filename = 'KagomeTest.npy'
+kagomeLattice.save(os.path.join(os.getcwd(),filename))
+kagomeLattice.randomMag()
+kagomeLattice.graph()
+#kagomeLattice.load(os.path.join(os.getcwd(),filename))
+#kagomeLattice.graph()
+kagomeLattice.fieldplot()
+plt.show()
+'''
 
+#field sweep test, count different test
+angle = 45
+Hamp = 0.95*Hc
+squareLattice = ASI_RPM(15, 15, bar_length = bar_length,\
+ vertex_gap = vertex_gap, bar_thickness = bar_thickness,\
+ bar_width = bar_width, magnetisation = magnetisation)
+squareLattice.square(Hc_mean=Hc, Hc_std=Hc_std)
+squareLattice.randomMag()
+squareLattice.graph()
+squareLattice.fieldplot()
+plt.show()
+q = squareLattice.fieldsweep(Hamp/np.cos(np.pi*angle/180),4,angle, n = 3, loops = 5)
+squareLattice.graph()
+squareLattice.fieldplot()
+
+
+def makePlot(x,y):
+    fig, ax =plt.subplots()
+    ax.plot(x, y)
+
+makePlot(np.arange(1, len(q)+1), q)
+
+
+plt.show()      #makes sure this is at the end of the code
