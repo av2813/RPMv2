@@ -1,11 +1,11 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as cl
+from matplotlib.ticker import MaxNLocator
 #from matplotlib.colors import Normalize
 import copy
-
-
 
 class ASI_RPM():
     def __init__(self, unit_cells_x, unit_cells_y, lattice = None, \
@@ -49,18 +49,18 @@ class ASI_RPM():
         '''
         self.side_len_x = 2*self.unit_cells_x+1
         self.side_len_y = 2*self.unit_cells_y+1
-        grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 8))        
+        grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 9))        
         for x in range(0, 2*self.unit_cells_x+1):
             for y in range(0, 2*self.unit_cells_y+1):
                 if (x+y)%2 != 0:
                     if y%2 == 0:
                         xpos = x*(self.bar_length+self.vertex_gap)/2
                         ypos = y*(self.bar_length+self.vertex_gap)/2
-                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0])
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,0])
                     else:
-                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,1.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0])
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,1.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,0])
                 else:
-                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0])
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,0])
         self.lattice = grid
 
     def kagome(self, Hc_mean = 0.03, Hc_std = 0.05*0.03):
@@ -113,13 +113,23 @@ class ASI_RPM():
         ax[0].set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
         ax[0].set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
         ax[0].set_title('Coercive Field')
-        fig.colorbar(graph, ax = ax[0],boundaries = np.linspace(np.min(Hc[np.nonzero(Hc)]), max(Hc),1000))
+        cb1 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax[0], format='%.2e',boundaries = np.linspace(np.min(Hc[np.nonzero(Hc)]), max(Hc),1000))
+        cb1.locator = MaxNLocator( nbins = 7)
+        cb1.update_ticks()
         graph = ax[1].quiver(X, Y, Mx, My, C, angles='xy', scale_units='xy',  pivot = 'mid')
         ax[1].set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
         ax[1].set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
         ax[1].set_title('Counts')
-        fig.colorbar(graph, ax = ax[1])
-
+        cb2 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax[1])
+        cb2.locator = MaxNLocator( nbins = 5)
+        cb2.update_ticks()
+        for axes in ax:
+            axes.plot([1, 2, 3], [1, 2, 3])
+            axes.set(adjustable='box-forced', aspect='equal')
+            plt.gca().xaxis.set_major_locator( MaxNLocator(nbins = 7, prune = 'lower') )
+            plt.gca().yaxis.set_major_locator( MaxNLocator(nbins = 6) )
+        plt.ticklabel_format(style='sci', scilimits=(0,0))
+        plt.tight_layout()
         plt.draw()
         
 
@@ -199,6 +209,7 @@ class ASI_RPM():
                 print('Happlied: ', Happlied)
                 self.relax(Happlied,n)
             self.graph()
+            self.graphCharge()
             q.append(self.correlation(self.previous,self))
         return q
     
@@ -229,7 +240,7 @@ class ASI_RPM():
         B *= 1e-7
         return(B)
 
-    def fieldplot(self, n=7):
+    def fieldplot(self, n=5):
         grid = self.lattice
         field = np.zeros((self.side_len_x,self.side_len_y,3))
         for x in range(0, self.side_len_x):
@@ -243,8 +254,8 @@ class ASI_RPM():
         fig, ax =plt.subplots(ncols = 2,sharex=True, sharey=True)
         plt.set_cmap(cm.jet)
         graph = ax[0].quiver(X, Y, Hx, Hy, angles='xy', scale_units='xy',  pivot = 'mid')
-        qk = ax[0].quiverkey(graph, 0.45, 0.9, 10, r'$mT$', labelpos='E',
-                   coordinates='figure')
+        #qk = ax[0].quiverkey(graph, 0.45, 0.9, 10, r'$mT$', labelpos='E',
+        #           coordinates='figure')
         ax[0].set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
         ax[0].set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
         ax[0].set_title('In Plane Field')
@@ -253,29 +264,116 @@ class ASI_RPM():
         ax[1].set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
         ax[1].set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
         ax[1].set_title('Out of Plane Field')
+        for axes in ax:
+            axes.plot([1, 2, 3], [1, 2, 3])
+            axes.set(adjustable='box-forced', aspect='equal')
+        plt.ticklabel_format(style='sci', scilimits=(0,0))
+        plt.tight_layout()
         #fig.colorbar(graph, ax = ax[0],boundaries = np.linspace(np.min(Hz), max(Hz),1000))
 
 
 
-    def verticeCharge(self,col,row):
+    def vertexCharge(self):
         '''
         Working on it
         '''
         grid = self.lattice
-        Hl = []
-        x1 = col - 1
-        x2 = col 
-        y1 = row
-        y2 = row
-        for x in range(0, self.side_len_x):
-            for y in range(0, self.side_len_y):
-                m1 = grid[x-1,y,2:4]
-                m2 = grid[x-1,y+1,2:4]
-                m3 = grid[x-1,y-1,2:4]
-                m4 = grid[x-2,y,2:4]
-                if grid[x,y, 4] != 0:
-                    print()
+        print("unit cells x = ",self.unit_cells_x)
+        print("unit cells y = ",self.unit_cells_y)
+        chargeGrid = np.zeros(((self.unit_cells_x-1)*(self.unit_cells_y-1), 3))     
+        print("charge grid initial =",chargeGrid)
+        #Hl = []
+        #x1 = col - 1
+        #x2 = col 
+        #y1 = row
+        #y2 = row
+        i = 0
+        for y in range(2, self.side_len_y-2,2):
+            for x in range(2, self.side_len_x-2,2):
+                if grid[x,y,6] == 0:
+                    m1 = grid[x-1,y,3]
+                    m2 = grid[x+1,y,3]
+                    m3 = grid[x,y+1,4]
+                    m4 = grid[x,y-1,4]
+                    #print("m1 =",m1)
+                    #print("m2 =",m2)
+                    #print("m3 =",m3)
+                    #print("m4 =",m4)
+                    charge = m1-m2-m3+m4
+                    print("charge = ",x ,y, charge)
+                    #grid[x,y,8] = charge
+                    print("i =", i)
+                    chargeGrid[i] = np.array([grid[x,y,0],grid[x,y,1],charge])
+                    print("charge grid =",chargeGrid)
+                    i = i+1
+                    #x+=x
+            #y=y+1
+        #self.lattice = grid
+        return(chargeGrid)
+                    
 
+    def graphCharge(self):
+            '''
+            Plots the positions and directions of the bar magnetisations as a quiver graph
+            '''
+            grid = self.lattice
+            chargeGrid = self.vertexCharge()
+            print("vertex charge tech yields =",chargeGrid)
+            X1 = grid[:,:,0].flatten()
+            Y1 = grid[:,:,1].flatten()
+            z = grid[:,:,2].flatten()
+            Mx = grid[:,:,3].flatten()
+            My = grid[:,:,4].flatten()
+            Mz = grid[:,:,5].flatten()
+            Hc = grid[:,:,6].flatten()
+            C = grid[:,:,7].flatten()
+            X2 = chargeGrid[:,0].flatten()
+            Y2 = chargeGrid[:,1].flatten()
+            MagCharge = chargeGrid[:,2].flatten()
+            print("x2 =",X2)
+            print("y2 =",Y2)
+            print("MagCharge =",MagCharge)
+            
+            fig = plt.figure(figsize=(6,6))
+            ax = fig.add_subplot(111)
+            ax.set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
+            ax.set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
+            ax.set_title("Vertex Magnetic Charge Map",fontsize=14)
+            #ax.set_xlabel("XAVG",fontsize=12)
+            #ax.set_ylabel("YAVG",fontsize=12)
+            #ax.grid(True,linestyle='-',color='0.75')
+
+            ax.quiver(X1, Y1, Mx, My, angles='xy', scale_units='xy',  pivot = 'mid', zorder=1)
+            # scatter with colormap mapping to z value
+            ax.scatter(X2,Y2,s=80,c=MagCharge, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' );
+            
+            #Y2 = grid[:,:,1].flatten()
+            #Charge = grid[:,:,8].flatten()
+            #Charge = np.array(Charge, dtype = np.double)
+            #Charge[ Charge == 0] = np.nan
+            #cmap = matplotlib.cm.get_cmap('viridis')
+            #normalize = matplotlib.colors.Normalize(vmin=min(MagCharge), vmax=max(MagCharge))
+            #colors = [cmap(normalize(value)) for value in MagCharge]
+            #ax = plt.gca()
+            #fig, ax =plt.subplots(ncols = 2,sharex=True, sharey=True)
+            #plt.set_cmap(cm.jet)
+            
+            #ax.scatter(X2,Y2,color=colors)
+            #ax.set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
+            #ax.set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
+            #ax.set_title('Vertex Charge Map')
+            
+            
+            
+            
+                        
+            #cb1 = ax.colorbar(graph, fraction=0.046, pad=0.04, ax = ax, format='%.2e',boundaries = np.linspace(np.min(Hc[np.nonzero(Hc)]), max(Hc),1000))
+            #cb1.locator = MaxNLocator( nbins = 7)
+            #cb1.update_ticks()
+            plt.ticklabel_format(style='sci', scilimits=(0,0))
+            plt.tight_layout()
+            plt.draw()
+            plt.show()
 
 
 
@@ -396,24 +494,25 @@ plt.show()
 #field sweep test, count different test
 angle = 45
 Hamp = 0.95*Hc
-squareLattice = ASI_RPM(15, 15, bar_length = bar_length,\
+squareLattice = ASI_RPM(6, 6, bar_length = bar_length,\
  vertex_gap = vertex_gap, bar_thickness = bar_thickness,\
  bar_width = bar_width, magnetisation = magnetisation)
 squareLattice.square(Hc_mean=Hc, Hc_std=Hc_std)
-squareLattice.randomMag()
+#squareLattice.randomMag()
+#squareLattice.vertexCharge()
+squareLattice.graphCharge()
 squareLattice.graph()
-squareLattice.fieldplot()
-plt.show()
-q = squareLattice.fieldsweep(Hamp/np.cos(np.pi*angle/180),4,angle, n = 3, loops = 5)
-squareLattice.graph()
-squareLattice.fieldplot()
+#squareLattice.fieldplot()
+#plt.show()
+#q = squareLattice.fieldsweep(Hamp/np.cos(np.pi*angle/180),4,angle, n = 3, loops = 5)
+#squareLattice.graph()
+#squareLattice.fieldplot()
 
 
-def makePlot(x,y):
-    fig, ax =plt.subplots()
-    ax.plot(x, y)
+#def makePlot(x,y):
+#    fig, ax =plt.subplots()
+#    ax.plot(x, y)
 
-makePlot(np.arange(1, len(q)+1), q)
-
+#makePlot(np.arange(1, len(q)+1), q)
 
 plt.show()      #makes sure this is at the end of the code

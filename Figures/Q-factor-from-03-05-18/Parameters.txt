@@ -1,0 +1,14 @@
+#field sweep test, count different test
+angle = 45
+Hamp = 0.95*Hc
+squareLattice = ASI_RPM(15, 15, bar_length = bar_length,\
+ vertex_gap = vertex_gap, bar_thickness = bar_thickness,\
+ bar_width = bar_width, magnetisation = magnetisation)
+squareLattice.square(Hc_mean=Hc, Hc_std=Hc_std)
+squareLattice.randomMag()
+squareLattice.graph()
+squareLattice.fieldplot()
+plt.show()
+q = squareLattice.fieldsweep(Hamp/np.cos(np.pi*angle/180),4,angle, n = 3, loops = 5)
+squareLattice.graph()
+squareLattice.fieldplot()
