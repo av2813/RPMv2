@@ -5,20 +5,21 @@ Features:
 	- Dumbell model simultation
 		- Add in a 'monopole' field calculation
 	- Fix the out of plane calculation
-	- Add a function that plots the sum of the vertices on each lattice
+	- Add a function that plots the sum of the vertices on each lattice. 
+		- Also counts the number of monopoles
 	- Add a bar that shows the magnitude of the quiver arrow in the field plot
 
 
 Benchmarks:
 	- 4x4 solutions compared with an analytical calculation
 	- Sweep parameter space
-	- 
+	- Replicate the Hysteresis loops found in Libal paper and Hugli paper
 
 
 Literature Review:
 	- Check how correlation factor is defined
 		+ Correlation factor is defined as the difference between the n and n+1 spin states. Where n is the number of minor loops
-		+ Update the code to reflect that
+		+ Updated the code to reflect that
 	- 
 
 
