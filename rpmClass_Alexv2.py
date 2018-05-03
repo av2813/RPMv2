@@ -12,6 +12,7 @@ class ASI_RPM():
         bar_length = 220e-9, vertex_gap = 1e-8, bar_thickness = 25e-9, \
         bar_width = 80e-9, magnetisation = 800e3):
         self.lattice = lattice
+        self.previous = None
         self.unit_cells_x = unit_cells_x
         self.unit_cells_y = unit_cells_y
         self.side_len_x = None      #The side length is now defined in the 
@@ -190,6 +191,7 @@ class ASI_RPM():
         field_steps = np.append(field_steps, np.linspace(Hmax,-Hmax,2*steps+1))
         field_steps = np.append(field_steps, np.linspace(-Hmax,0,steps+1))
         for i in range(0, loops):
+            self.previous = copy.deepcopy(self)
             #print ("i = ",i)
             for j in field_steps:
                 #print ("j = ", j)
@@ -197,7 +199,7 @@ class ASI_RPM():
                 print('Happlied: ', Happlied)
                 self.relax(Happlied,n)
             self.graph()
-            q.append(self.correlation(M0,self))
+            q.append(self.correlation(self.previous,self))
         return q
     
     #for Hx, Hy in np.meshgrid(Hx_list, Hy_list, sparse = True):
@@ -241,6 +243,8 @@ class ASI_RPM():
         fig, ax =plt.subplots(ncols = 2,sharex=True, sharey=True)
         plt.set_cmap(cm.jet)
         graph = ax[0].quiver(X, Y, Hx, Hy, angles='xy', scale_units='xy',  pivot = 'mid')
+        qk = ax[0].quiverkey(graph, 0.45, 0.9, 10, r'$mT$', labelpos='E',
+                   coordinates='figure')
         ax[0].set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
         ax[0].set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
         ax[0].set_title('In Plane Field')
