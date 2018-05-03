@@ -20,7 +20,7 @@ Literature Review:
 	- Check how correlation factor is defined
 		+ Correlation factor is defined as the difference between the n and n+1 spin states. Where n is the number of minor loops
 		+ Updated the code to reflect that
-	- 
+	- test
 
 
 
