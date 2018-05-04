@@ -525,11 +525,12 @@ squareLattice.randomMag()
 print(squareLattice.monopoleDensity())
 squareLattice.randomMag()
 print(squareLattice.monopoleDensity())
+squareLattice.graphCharge()
 '''
 print(squareLattice.netMagnetisation())
 #squareLattice.randomMag()
 #squareLattice.vertexCharge()
-squareLattice.graphCharge()
+
 squareLattice.graph()
 #squareLattice.fieldplot()
 #plt.show()
