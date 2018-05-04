@@ -284,16 +284,15 @@ class ASI_RPM():
         Working on it
         '''
         grid = self.lattice
-        print("unit cells x = ",self.unit_cells_x)
-        print("unit cells y = ",self.unit_cells_y)
+        #print("unit cells x = ",self.unit_cells_x)
+        #print("unit cells y = ",self.unit_cells_y)
         chargeGrid = np.zeros(((self.unit_cells_x-1)*(self.unit_cells_y-1), 3))     
-        print("charge grid initial =",chargeGrid)
+        #print("charge grid initial =",chargeGrid)
         #Hl = []
         #x1 = col - 1
         #x2 = col 
         #y1 = row
         #y2 = row
-        grid
         i = 0
         for y in range(2, self.side_len_y-2,2):
             for x in range(2, self.side_len_x-2,2):
@@ -307,11 +306,11 @@ class ASI_RPM():
                     #print("m3 =",m3)
                     #print("m4 =",m4)
                     charge = m1-m2-m3+m4
-                    print("charge = ",x ,y, charge)
+                    #print("charge = ",x ,y, charge)
                     #grid[x,y,8] = charge
-                    print("i =", i)
+                    #print("i =", i)
                     chargeGrid[i] = np.array([grid[x,y,0],grid[x,y,1],charge])
-                    print("charge grid =",chargeGrid)
+                    #print("charge grid =",chargeGrid)
                     i = i+1
                     #x+=x
             #y=y+1
@@ -334,12 +333,12 @@ class ASI_RPM():
             Mz = grid[:,:,5].flatten()
             Hc = grid[:,:,6].flatten()
             C = grid[:,:,7].flatten()
-            X2 = chargeGrid[:,0].flatten()
-            Y2 = chargeGrid[:,1].flatten()
-            MagCharge = chargeGrid[:,2].flatten()
-            print("x2 =",X2)
-            print("y2 =",Y2)
-            print("MagCharge =",MagCharge)
+            X2 = chargeGrid[:,0]
+            Y2 = chargeGrid[:,1]
+            MagCharge = chargeGrid[:,2]
+            #print("x2 =",X2)
+            #print("y2 =",Y2)
+            #print("MagCharge =",MagCharge)
             
             fig = plt.figure(figsize=(6,6))
             ax = fig.add_subplot(111)
@@ -417,10 +416,11 @@ class ASI_RPM():
     def randomMag(self, seed = None):
         State = np.random.RandomState(seed=seed)
         grid = self.lattice
-        for x in grid:
-            for y in x:
-                if State.uniform(low=0.0, high=1.0)>0.5:
-                    y[3:5]=-1.*y[3:5]
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if grid[x,y,6] != 0:
+                    if State.uniform(low=0.0, high=1.0)>0.5:
+                        grid[x,y,3:5]=-1.*grid[x,y,3:5]
         self.lattice = grid
 
     def correlation(self, lattice1, lattice2):
@@ -460,13 +460,17 @@ class ASI_RPM():
     """
 
     def netMagnetisation(self):
-        grid = self.lattice
+        grid = copy.deepcopy(self.lattice)
         #grid[grid[:,:,0] == 0] = np.nan
         grid[grid[:,:,6]==0] = np.nan
         mx = grid[:,:,3].flatten()
         my = grid[:,:,4].flatten()
         return(np.array([np.nanmean(mx),np.nanmean(my)]))
         
+    def monopoleDensity(self):
+        grid = self.lattice
+        chargeGrid = self.vertexCharge()
+        return(np.mean(np.absolute(chargeGrid[:,2])))
 
 
     def returnLattice(self):
@@ -515,8 +519,13 @@ squareLattice = ASI_RPM(6, 6, bar_length = bar_length,\
  vertex_gap = vertex_gap, bar_thickness = bar_thickness,\
  bar_width = bar_width, magnetisation = magnetisation)
 squareLattice.square(Hc_mean=Hc, Hc_std=Hc_std)
+print(squareLattice.monopoleDensity())
 print(squareLattice.netMagnetisation())
 squareLattice.randomMag()
+print(squareLattice.monopoleDensity())
+squareLattice.randomMag()
+print(squareLattice.monopoleDensity())
+'''
 print(squareLattice.netMagnetisation())
 #squareLattice.randomMag()
 #squareLattice.vertexCharge()
@@ -544,3 +553,4 @@ plt.show()
 #makePlot(np.arange(1, len(q)+1), q)
 
 plt.show()      #makes sure this is at the end of the code
+'''
