@@ -7,6 +7,7 @@ from matplotlib.ticker import MaxNLocator
 #from matplotlib.colors import Normalize
 import copy
 
+
 class ASI_RPM():
     def __init__(self, unit_cells_x, unit_cells_y, lattice = None, \
         bar_length = 220e-9, vertex_gap = 1e-8, bar_thickness = 25e-9, \
@@ -154,7 +155,7 @@ class ASI_RPM():
 
         return(self(self.unit_cells_x, self.unit_cells_y,lattice = diff))
 
-
+    
     def relax(self, Happlied = np.array([0.,0.,0.]), n=10):
         '''
         Steps through all the the positions in the lattice and if the field applied along the direction
@@ -188,15 +189,16 @@ class ASI_RPM():
             else:
                 unrelaxed = False
             self.lattice = grid
-        
-    def fieldsweep(self, Hmax, steps, Htheta, n=10, loops=1):
+    
+    
+    def fieldsweep(self, Hmax, steps, Htheta, n=10, loops=1, Hysteresis = False):
         '''
         Sweeps through 
         '''
         M0 = copy.deepcopy(self)
         Htheta = np.pi*Htheta/180
         q = []
-        q_test = []
+        mag = []
         field_steps = np.linspace(0,Hmax,steps+1)
         field_steps = np.append(field_steps, np.linspace(Hmax,-Hmax,2*steps+1))
         field_steps = np.append(field_steps, np.linspace(-Hmax,0,steps+1))
@@ -208,14 +210,17 @@ class ASI_RPM():
                 Happlied = j*np.array([np.cos(Htheta),np.sin(Htheta), 0.])
                 print('Happlied: ', Happlied)
                 self.relax(Happlied,n)
-            self.graph()
-            self.graphCharge()
+                mag.append(self.netMagnetisation())
+
+            #self.graph()
+            #self.graphCharge()
             q.append(self.correlation(self.previous,self))
-        return q
+        return(q, np.array(mag))
     
     #for Hx, Hy in np.meshgrid(Hx_list, Hy_list, sparse = True):
     #np.meshgrid(Hx_list, Hy_list, sparse = True):
-        
+    
+    
     def dipole(self, m, r, r0):
         """Calculate a field in point r created by a dipole moment m located in r0.
         Spatial components are the outermost axis of r and returned B.
@@ -240,6 +245,7 @@ class ASI_RPM():
         B *= 1e-7
         return(B)
 
+    
     def fieldplot(self, n=5):
         grid = self.lattice
         field = np.zeros((self.side_len_x,self.side_len_y,3))
@@ -252,7 +258,7 @@ class ASI_RPM():
         Hy = field[:,:, 1].flatten()
         Hz = field[:,:, 2].flatten()
         fig, ax =plt.subplots(ncols = 2,sharex=True, sharey=True)
-        plt.set_cmap(cm.jet)
+        plt.set_cmap(cm.plasma)
         graph = ax[0].quiver(X, Y, Hx, Hy, angles='xy', scale_units='xy',  pivot = 'mid')
         #qk = ax[0].quiverkey(graph, 0.45, 0.9, 10, r'$mT$', labelpos='E',
         #           coordinates='figure')
@@ -272,7 +278,7 @@ class ASI_RPM():
         #fig.colorbar(graph, ax = ax[0],boundaries = np.linspace(np.min(Hz), max(Hz),1000))
 
 
-
+    
     def vertexCharge(self):
         '''
         Working on it
@@ -287,6 +293,7 @@ class ASI_RPM():
         #x2 = col 
         #y1 = row
         #y2 = row
+        grid
         i = 0
         for y in range(2, self.side_len_y-2,2):
             for x in range(2, self.side_len_x-2,2):
@@ -311,7 +318,7 @@ class ASI_RPM():
         #self.lattice = grid
         return(chargeGrid)
                     
-
+    
     def graphCharge(self):
             '''
             Plots the positions and directions of the bar magnetisations as a quiver graph
@@ -376,7 +383,7 @@ class ASI_RPM():
             plt.show()
 
 
-
+    
     def Hlocal2(self, x,y,n =1):
         Hl = []
         x1 = x - 2*n
@@ -452,6 +459,16 @@ class ASI_RPM():
         return(same/total)
     """
 
+    def netMagnetisation(self):
+        grid = self.lattice
+        #grid[grid[:,:,0] == 0] = np.nan
+        grid[grid[:,:,6]==0] = np.nan
+        mx = grid[:,:,3].flatten()
+        my = grid[:,:,4].flatten()
+        return(np.array([np.nanmean(mx),np.nanmean(my)]))
+        
+
+
     def returnLattice(self):
         return self.lattice
 
@@ -493,18 +510,29 @@ plt.show()
 
 #field sweep test, count different test
 angle = 45
-Hamp = 0.95*Hc
+Hamp = 1.3*Hc
 squareLattice = ASI_RPM(6, 6, bar_length = bar_length,\
  vertex_gap = vertex_gap, bar_thickness = bar_thickness,\
  bar_width = bar_width, magnetisation = magnetisation)
 squareLattice.square(Hc_mean=Hc, Hc_std=Hc_std)
+print(squareLattice.netMagnetisation())
+squareLattice.randomMag()
+print(squareLattice.netMagnetisation())
 #squareLattice.randomMag()
 #squareLattice.vertexCharge()
 squareLattice.graphCharge()
 squareLattice.graph()
 #squareLattice.fieldplot()
 #plt.show()
-#q = squareLattice.fieldsweep(Hamp/np.cos(np.pi*angle/180),4,angle, n = 3, loops = 5)
+Hmax = Hamp/np.cos(np.pi*angle/180)
+steps = 20
+field_steps = np.linspace(0,Hmax,steps+1)
+field_steps = np.append(field_steps, np.linspace(Hmax,-Hmax,2*steps+1))
+field_steps = np.append(field_steps, np.linspace(-Hmax,0,steps+1))
+q, Mag = squareLattice.fieldsweep(Hamp/np.cos(np.pi*angle/180),20,angle, n = 3, loops = 2)
+fig = plt.figure()
+plt.plot(np.tile(field_steps,2),Mag)
+plt.show()
 #squareLattice.graph()
 #squareLattice.fieldplot()
 
