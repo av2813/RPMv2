@@ -14,7 +14,6 @@ class ASI_RPM():
         bar_length = 220e-9, vertex_gap = 1e-7, bar_thickness = 25e-9, \
         bar_width = 80e-9, magnetisation = 800e3):
         self.lattice = lattice
-        self.type = None
         self.previous = None
         self.unit_cells_x = unit_cells_x
         self.unit_cells_y = unit_cells_y
@@ -65,7 +64,6 @@ class ASI_RPM():
         Generates a normally distributed range of coercive fields of the bars using Hc_mean and Hc_std as a percentage
         One thing to potentially change is to have the positions in nanometers
         '''
-        self.type = 'square'
         self.side_len_x = 2*self.unit_cells_x+1
         self.side_len_y = 2*self.unit_cells_y+1
         grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 9))        
@@ -92,65 +90,241 @@ class ASI_RPM():
         Generates a normally distributed range of coercive fields of the bars using Hc_mean and Hc_std
         '''
         self.type = 'kagome'
+        xfactor = 2*np.cos(np.pi/6)
+        yfactor = 2*np.sin(np.pi/6)
         self.side_len_x = 2*self.unit_cells_x+1
-        self.side_len_y = 2*self.unit_cells_y+1
-        grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1,9))
+        self.side_len_y = 4*self.unit_cells_y+1
+        grid = np.zeros((2*self.unit_cells_x+1, 4*self.unit_cells_y+1,9))
+        xfactor = 2*np.cos(np.pi/6)
+        yfactor = 2*np.sin(np.pi/6)
         for x in range(0, self.side_len_x):
             for y in range(0, self.side_len_y):
-                if x%2!=0 and y%4==0:
-                    if (x-1)%4==0:
-                        grid[x,y] = np.array([2*np.cos(np.pi/6)*x*self.unit_cell_len,(y+2)*self.unit_cell_len,0.,1.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0, None])
+                if x%2!=0 and y%2==0:
+                    if (x-1)%4==0 and (y-2)%4==0:
+                        grid[x+1,y] = np.array([xfactor*(x+1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
+                        grid[x-1,y] = np.array([xfactor*(x-1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
+                        grid[x,y] = np.array([xfactor*x*self.unit_cell_len,(y)*self.unit_cell_len,0.,1.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0, None])
+                    elif (x-3)%4==0 and (y)%4==0:
+                        grid[x+1,y] = np.array([xfactor*(x-1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
+                        grid[x-1,y] = np.array([xfactor*(x+1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
+                        grid[x,y] = np.array([xfactor*x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                     else:
-                        grid[x,y] = np.array([2*np.cos(np.pi/6)*x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        grid[x,y] = np.array([xfactor*x*self.unit_cell_len,y*self.unit_cell_len,0.,0,0,0,0,0,None])
                 elif x%2 ==0 and (y-1)%4==0:
                     if x%4==0:
-                        grid[x,y] = np.array([2*np.cos(np.pi/6)*x*self.unit_cell_len,2*np.sin(np.pi/6)*y*self.unit_cell_len,0.,0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        grid[x,y] = np.array([xfactor*x*self.unit_cell_len,yfactor*y*self.unit_cell_len,0.,0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                     else:
-                        grid[x,y] = np.array([2*np.cos(np.pi/6)*x*self.unit_cell_len,2*np.sin(np.pi/6)*y*self.unit_cell_len,0.,-0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        grid[x,y] = np.array([xfactor*x*self.unit_cell_len,yfactor*y*self.unit_cell_len,0.,-0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                 elif x%2 ==0 and (y-3)%4==0:
                     if x%4==0:
-                        grid[x,y] = np.array([2*np.cos(np.pi/6)*x*self.unit_cell_len,2*np.sin(np.pi/6)*y*self.unit_cell_len,0.,-0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        grid[x,y] = np.array([xfactor*x*self.unit_cell_len,yfactor*y*self.unit_cell_len,0.,-0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                     else:
-                        grid[x,y] = np.array([2*np.cos(np.pi/6)*x*self.unit_cell_len,2*np.sin(np.pi/6)*y*self.unit_cell_len,0.,0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        grid[x,y] = np.array([xfactor*x*self.unit_cell_len,yfactor*y*self.unit_cell_len,0.,0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                 else:
-                    grid[x,y] = np.array([2*np.cos(np.pi/6)*x*self.unit_cell_len,y*self.unit_cell_len,0.,0,0,0,0,0,None])
+                    if np.array_equal(grid[x,y,0:2], [0., 0.]):
+                        grid[x,y] = np.array([xfactor*x*self.unit_cell_len,y*self.unit_cell_len,0.,0,0,0,0,0,None])
         self.lattice = grid
-    
-    def kagome2(self, Hc_mean = 0.03, Hc_std = 0.05):
-        self.type = 'kagome'
-        self.side_len_x = 4*self.unit_cells_x+3
-        self.side_len_y = 4*self.unit_cells_y+3
-        grid = np.zeros((self.side_len_x, self.side_len_y,9))
+
+    def short_shakti(self, Hc_mean = 0.03, Hc_std = 0.05):
+        self.side_len_x = 4*self.unit_cells_x+1
+        self.side_len_y = 4*self.unit_cells_y+1
+        grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
         for x in range(0, self.side_len_x):
             for y in range(0, self.side_len_y):
-                if (x-3)%4!=0 and y%2==0:
-                    if (x-3)%1==0:
-                        print(x,y)
-                        grid[x,y] = np.array([x*self.unit_cell_len,(y)*self.unit_cell_len,0.,1.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
-                        grid[x-1,y] = np.array([(x-1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0,0,0,0,0,0])
-                        #grid[x+1,y] = np.array([(x+1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0,0,0,0,0])
-                    elif (x+1)%8==0:
-                        print(x,y)
-                        grid[x,y] = np.array([x*self.unit_cell_len,(y)*self.unit_cell_len,0.,1.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
-                        grid[x-1,y] = np.array([(x-1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0,0,0,0,0,0])
-                        grid[x+1,y] = np.array([(x+1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0,0,0,0,0,0])
-                elif (x-1)%4 ==0 and (y-1)%4==0:
-                    if (x-1)%8==0:
-                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
-                        #grid[x,y+2] = np.array([x*self.unit_cell_len,(y+2)*self.unit_cell_len,0.,-0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),None])
+                if (x+y)%2 != 0:
+                    if y%2 == 0:
+                        xpos = x*(self.bar_length+self.vertex_gap)/2
+                        ypos = y*(self.bar_length+self.vertex_gap)/2
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                     else:
-                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,-0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
-                        #grid[x,y+2] = np.array([x*self.unit_cell_len,(y+2)*self.unit_cell_len,0.,0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),None])
-                elif (x-1)%4 ==0 and (y-3)%4==0:
-                    if (x-1)%8==0:
-                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,-0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
-                    else:
-                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.5,(3**0.5/2),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,1.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                 else:
-                    if grid[x,y,0] == 0:
-                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0,0,0,0,0,None])
+                    if x%2 ==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,0])
+                    else:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if (y-2)%8==0:
+                    if (x-1)%8==0 or (x-3)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if (y-6)%8==0:
+                    if (x-5)%8==0 or (x-7)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if (x-2)%8==0:
+                    if (y-5)%8==0 or (y-7)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if (x-6)%8==0:
+                    if (y-1)%8==0 or (y-3)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
         self.lattice = grid
+
+    def long_shakti(self, Hc_mean = 0.062, Hc_std = 0.05):
+        self.side_len_x = 4*self.unit_cells_x+1
+        self.side_len_y = 4*self.unit_cells_y+1
+        grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if (x+y)%2 != 0:
+                    if y%2 == 0:
+                        xpos = x*(self.bar_length+self.vertex_gap)/2
+                        ypos = y*(self.bar_length+self.vertex_gap)/2
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                    else:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,1.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                else:
+                    if x%2 ==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,0])
+                    else:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if (y-2)%8==0:
+                    if (x-1)%8==0 or (x-3)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if (y-6)%8==0:
+                    if (x-5)%8==0 or (x-7)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if (x-2)%8==0:
+                    if (y-5)%8==0 or (y-7)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if (x-6)%8==0:
+                    if (y-1)%8==0 or (y-3)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if (y-2)%8==0:
+                    if (x-5)%8==0 or (x-7)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                    if (x-6)%8==0:
+                        grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,2.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                if (y-6)%8==0:
+                    if (x-1)%8==0 or (x-3)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                    if (x-2)%8==0:
+                        grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,2.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                if (x-2)%8==0:
+                    if (y-1)%8==0 or (y-3)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                    if (y-2)%8==0:
+                        grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,0.,2.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                if (x-6)%8==0:
+                    if (y-5)%8==0 or (y-7)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                    if (y-6)%8==0:
+                        grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,0.,2.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+        self.lattice = grid
+
+    def tetris(self, Hc_mean = 0.03, Hc_std = 0.05):
+        #Working on it
+        self.side_len_x = 4*self.unit_cells_x+1
+        self.side_len_y = 4*self.unit_cells_y+1
+        grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if (x+y)%2 != 0:
+                    if y%2 == 0:
+                        xpos = x*(self.bar_length+self.vertex_gap)/2
+                        ypos = y*(self.bar_length+self.vertex_gap)/2
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                    else:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,1.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                else:
+                    if x%2 ==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,0])
+                    else:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if ((x-2)%16==0 and (y-1)%8==0) or ((x-12)%16==0 and (y-1)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if (x-4)%16==0 and (y-1)%8==0 or ((x-14)%16==0 and (y-1)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if (x-3)%16==0 and (y-2)%8==0 or ((x-13)%16==0 and (y)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+
+
+                if ((x-6)%16==0 and (y+1)%8==0) or ((x-16)%16==0 and (y+1)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if ((x-8)%16==0 and (y+1)%8==0) or ((x-18)%16==0 and (y+1)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if ((x-7)%16==0 and (y)%8==0)  or ((x-13)%16==0 and (y+2)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+
+                if ((x-8)%16==0 and (y-3)%8==0) or ((x-18)%16==0 and (y-3)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if ((x-10)%16==0 and (y-3)%8==0)  or ((x-20)%16==0 and (y-3)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if ((x-9)%16==0 and (y-2)%8==0)  or ((x-19)%16==0 and (y)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None]) 
+
+
+                if ((x-4)%16==0 and (y-5)%8==0)  or ((x-14)%16==0 and (y-5)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if ((x-6)%16==0 and (y-5)%8==0)  or ((x-16)%16==0 and (y-5)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if ((x-5)%16==0 and (y-4)%8==0)  or ((x-15)%16==0 and (y-2)%8==0):
+                    grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+
+        self.lattice = grid
+
+
+    def pinwheel(self, Hc_mean = 0.062, Hc_std = 0.05):
+        print('working on it')
+
+
+    '''
+    def angledSquare(self, angle, Hc_mean= 0.03, Hc_std = 0.05):
+        self.type = 'square'
+        self.side_len_x = 2*self.unit_cells_x+1
+        self.side_len_y = 2*self.unit_cells_y+1
+        grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 9))        
+        for x in range(0, 2*self.unit_cells_x+1):
+            for y in range(0, 2*self.unit_cells_y+1):
+                if (x+y)%2 != 0:
+                    if y%2 == 0:
+                        xpos = x*(self.bar_length+self.vertex_gap)/2
+                        ypos = y*(self.bar_length+self.vertex_gap)/2
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,2**0.5/2.,2**0.5/2.,0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                    else:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,2**0.5/2.,2**0.5/2.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                else:
+                    if x%2 ==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,2**0.5/2.,-2**0.5/2.,0.,0,0,0])
+                    else:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,2**0.5/2.,-2**0.5/2.,0.,0,0,None])
+        self.lattice = grid
+
     
+    def vertexCharge2(self):
+        grid = copy.deepcopy(self.lattice)
+        print(grid)
+        #grid[np.isnan(grid[:,:,0]) == False] = 
+        for x in np.arange(0, self.side_len_x):
+            for y in np.arange(0, self.side_len_y):
+                if np.isnan(grid[x,y,8])!=True:
+                    local = np.array([])
+                    print(grid[x,y,8])
+                    print(x,y)
+                    print(grid.item((x,y,8)))
+                    local = np.append(local,grid[x-1,y+1,:])
+                    local = np.append(local,grid[x,y+1,:])
+                    local = np.append(local,grid[x+1,y+1,:])
+                    local = np.append(local,grid[x-1,y,:])
+                    local = np.append(local,grid[x,y,:])
+                    local = np.append(local,grid[x+1,y,:])
+                    local = np.append(local,grid[x-1,y-1,:])
+                    local = np.append(local,grid[x,y-1,:])
+                    local = np.append(local,grid[x+1,y-1,:])
+                    local = np.reshape(local,(3,3,9))
+                    print(local)
+                    #local = grid[x-1:x+3,y-1:y+3,:]
+                    plt.quiver(grid[:,:,0].flatten(), grid[:,:,1].flatten(),grid[:,:,3].flatten(),grid[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
+                    plt.scatter(grid[:,:,0].flatten(), grid[:,:,0].flatten(), c = grid[:,:,8].flatten())
+                    plt.plot(grid[x,y,0],grid[x,y,1], 'o')
+                    plt.quiver(local[:,:,0].flatten(), local[:,:,1].flatten(),local[:,:,3].flatten(),local[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
+                    plt.show()
+    '''
     
     def graph(self):
         '''
@@ -165,18 +339,19 @@ class ASI_RPM():
         Mz = grid[:,:,5].flatten()
         Hc = grid[:,:,6].flatten()
         C = grid[:,:,7].flatten()
+        Charge = grid[:,:,8].flatten()
         fig, ax =plt.subplots(ncols = 2,sharex=True, sharey=True)
         plt.set_cmap(cm.jet)
         graph = ax[0].quiver(X, Y, Mx, My, Hc, angles='xy', scale_units='xy',  pivot = 'mid')
-        ax[0].set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
-        ax[0].set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
+        ax[0].set_xlim([-1*self.unit_cell_len, np.max(X)])
+        ax[0].set_ylim([-1*self.unit_cell_len, np.max(X)])
         ax[0].set_title('Coercive Field')
         cb1 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax[0], format='%.2e',boundaries = np.linspace(np.min(Hc[np.nonzero(Hc)]), max(Hc),1000))
         cb1.locator = MaxNLocator( nbins = 7)
         cb1.update_ticks()
         graph = ax[1].quiver(X, Y, Mx, My, C, angles='xy', scale_units='xy',  pivot = 'mid')
-        ax[1].set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
-        ax[1].set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
+        ax[1].set_xlim([-1*self.unit_cell_len, np.max(Y)])
+        ax[1].set_ylim([-1*self.unit_cell_len, np.max(Y)])
         ax[1].set_title('Counts')
         cb2 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax[1])
         cb2.locator = MaxNLocator( nbins = 5)
@@ -188,6 +363,11 @@ class ASI_RPM():
             plt.gca().yaxis.set_major_locator( MaxNLocator(nbins = 6) )
         plt.ticklabel_format(style='sci', scilimits=(0,0))
         plt.tight_layout()
+        fig, ax =plt.subplots()
+        plt.scatter(X, Y, c = Charge)
+        plt.quiver(X, Y, Mx, My, C, angles='xy', scale_units='xy',  pivot = 'mid')
+        ax.set_xlim([-1*self.unit_cell_len, np.max(X)])
+        ax.set_ylim([-1*self.unit_cell_len, np.max(Y)])
         plt.draw()
         plt.show()
         
@@ -228,17 +408,18 @@ class ASI_RPM():
             for x in range(0, self.side_len_x):
                 for y in range(0, self.side_len_y):
                     if abs(grid[x,y,6]) != 0:
-                        unit_vector = grid[x,y,3:6]/np.linalg.norm(grid[x,y,3:6])
+                        unit_vector = grid[x,y,3:6]
                         field = np.dot(np.array(Happlied+self.Hlocal2(x,y, n=n)), unit_vector)
                         #print(field)
                         if field < -grid[x,y,6]:
                             #print(grid[x,y,3:5])
                             grid[x,y,3:5] = np.negative(grid[x,y,3:5])
                             #print(grid[x,y,3:5])
-                            grid[x,y,:][grid[x,y,:]==0.] = 0.
+                            
                             grid[x,y,7] += 1
                             flipcount += 1
                             #print(grid[x,y,3:5])
+            grid[x,y,:][grid[x,y,:]==0.] = 0.
             print("no of flipped spins in relax", flipcount)
             grid[grid==-0.] = 0.
             if flipcount > 0:

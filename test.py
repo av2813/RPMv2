@@ -30,3 +30,17 @@ filename = 'KagomeTest.npy'
 #kagomeLattice.fieldplot()
 plt.show()
 
+#kagomeLattice1.vertexCharge2()
+
+s = rpm.ASI_RPM(5,5)
+s.short_shakti()
+s.graph()
+
+s = rpm.ASI_RPM(5,5)
+s.long_shakti()
+s.graph()
+
+
+t = rpm.ASI_RPM(10,10)
+t.tetris()
+t.graph()
