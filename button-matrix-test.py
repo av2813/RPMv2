@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from tkinter import *
 
 #colorCounter = none
@@ -98,7 +99,7 @@ def matrix(width=4,height=4):
     
     root.mainloop()
 
-def write():
+def write(folder = os.getcwd()):
     global colorCounter
     file = input("enter file name: ")
     np.save(file,colorCounter)
