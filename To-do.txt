@@ -1,0 +1,27 @@
+
+
+Features:
+	- Make the graphs default to square
+	- Dumbell model simultation
+		- Add in a 'monopole' field calculation
+	- Fix the out of plane calculation
+	- Add a function that plots the sum of the vertices on each lattice
+	- Add a bar that shows the magnitude of the quiver arrow in the field plot
+	- Add an energy term for each spin. This would allow for monte Carlo simulations down the line as well as being able to include thermal effects without. Also might be a good metric for bench marking
+	- 
+
+
+Benchmarks:
+	- 4x4 solutions compared with an analytical calculation
+	- Sweep parameter space
+	- 
+
+
+Literature Review:
+	- Check how correlation factor is defined
+		+ Correlation factor is defined as the difference between the n and n+1 spin states. Where n is the number of minor loops
+	- http://rsta.royalsocietypublishing.org/content/370/1981/5767#sec-1. Simulated Hysteresis loops using very similar dipolar model to us.
+	- 
+
+
+
