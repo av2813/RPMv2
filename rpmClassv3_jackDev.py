@@ -67,8 +67,6 @@ class ASI_RPM():
         print("loaded")
         #parameters = npzfile['arr_1']
         print (npfile) 
-        height = 4
-        width = 4
         grid = self.lattice
         for y in range(npfile.shape[1]):
             for x in range(npfile.shape[0]):
@@ -77,8 +75,9 @@ class ASI_RPM():
                     if npfile[x,y] == 1:
                         print("magnetisation before =",grid[x,y,3:5])
                         grid[x,y,3:5] *= -1 
-                        grid[x,y,:][grid[x,y,:]==0.] = 0
+                        
                         print("magnetisation after =",grid[x,y,3:5])
+        grid[:,:,3:5][grid[:,:,3:5]==0.] = 0.
                                 
     def square(self, Hc_mean = 0.03, Hc_std = 0.05):
         '''
@@ -599,14 +598,14 @@ vertex_gap = 1e-7
 bar_thickness = 25e-9
 bar_width = 80e-9
 magnetisation = 800e3
-squareLattice = ASI_RPM(2, 2, bar_length = bar_length,\
+squareLattice = ASI_RPM(4, 4, bar_length = bar_length,\
  vertex_gap = vertex_gap, bar_thickness = bar_thickness,\
  bar_width = bar_width, magnetisation = magnetisation)
 squareLattice.square(Hc_mean=Hc, Hc_std=Hc_std)
 squareLattice.vertexCharge()
 squareLattice.graphCharge()
 
-squareLattice.loadSpinWrite("matrix.npy")
+squareLattice.loadSpinWrite("diagonal_8x8.npy")
 
 squareLattice.graphCharge()
 

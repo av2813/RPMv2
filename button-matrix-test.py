@@ -59,7 +59,9 @@ def colourer(row,col):
     print("colorCounter =",colorCounter[row,col])
     spinButton[row][col]['bg'] = boardColor
 
-def matrix(width=4,height=4):
+def matrix(unitCellx=4,unitCelly=4):
+    width = unitCellx*2+1
+    height = unitCelly*2+1
     global colorCounter, boardColor, spinButton  
     #Create & Configure root 
     root = Tk()
@@ -101,6 +103,8 @@ def matrix(width=4,height=4):
 
 def write(folder = os.getcwd()):
     global colorCounter
+    #colorCounter = zip(*colorCounter[::-1])
+    colorCounter = np.rot90(colorCounter,1,(1,0))
     file = input("enter file name: ")
     np.save(file,colorCounter)
     print("write array = ",colorCounter)
