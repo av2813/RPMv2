@@ -9,7 +9,8 @@ lattice.graph()
 lattice.graphCharge()
 
 
-fieldApplied = [58.9, 59.52,60.14, 60.76, 61.38, 62.0, 62.62, 63.24, 63.86]
+#fieldApplied = [58.9, 59.52,60.14, 60.76, 61.38, 62.0, 62.62, 63.24, 63.86]
+fieldApplied = [68.3, 71.3,74.4, 77.5]
 
 corrEnd = []
 monoEnd = []
