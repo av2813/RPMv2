@@ -15,6 +15,7 @@ class ASI_RPM():
         bar_width = 80e-9, magnetisation = 800e3):
         self.lattice = lattice
         self.type = None
+        self.type = None
         self.previous = None
         self.unit_cells_x = unit_cells_x
         self.unit_cells_y = unit_cells_y
@@ -36,7 +37,7 @@ class ASI_RPM():
         file = file.replace('.','p')
         parameters = np.array([self.unit_cells_x,self.unit_cells_y,\
             self.bar_length,self.vertex_gap,self.bar_width,\
-            self.bar_thickness,self.magnetisation, self.side_len_x, self.side_len_y])
+            self.bar_thickness,self.magnetisation, self.side_len_x, self.side_len_y, self.type])
         np.savez(os.path.join(folder,file), self.lattice, parameters)
 
     def load(self, file):
@@ -55,6 +56,7 @@ class ASI_RPM():
         self.magnetisation = parameters[6]
         self.side_len_x = np.int(parameters[7])
         self.side_len_y = np.int(parameters[8])
+        self.type = parameters[9]
         self.lattice = npzfile['arr_0']
         
     def square(self, Hc_mean = 0.03, Hc_std = 0.05):
@@ -105,13 +107,13 @@ class ASI_RPM():
                 if x%2!=0 and y%2==0:
                     if (x-1)%4==0 and (y-2)%4==0:
                         if y%(self.side_len_y-1)!=0:
-                            grid[x+1,y] = np.array([xfactor*(x+1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
-                            grid[x-1,y] = np.array([xfactor*(x-1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
+                            grid[x+1,y] = np.array([xfactor*(x+test)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
+                            grid[x-1,y] = np.array([xfactor*(x-test)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
                         grid[x,y] = np.array([xfactor*x*self.unit_cell_len,(y)*self.unit_cell_len,0.,1.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0, None])
                     elif (x-3)%4==0 and (y)%4==0:
                         if y%(self.side_len_y-1)!=0:
-                            grid[x+1,y] = np.array([xfactor*(x+1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
-                            grid[x-1,y] = np.array([xfactor*(x-1)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
+                            grid[x+1,y] = np.array([xfactor*(x+test)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
+                            grid[x-1,y] = np.array([xfactor*(x-test)*self.unit_cell_len,(y)*self.unit_cell_len,0.,0.,0.,0.,0.,0, 0])
                         grid[x,y] = np.array([xfactor*x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                     else:
                         grid[x,y] = np.array([xfactor*x*self.unit_cell_len,y*self.unit_cell_len,0.,0,0,0,0,0,None])
@@ -132,6 +134,7 @@ class ASI_RPM():
 
 
     def short_shakti(self, Hc_mean = 0.03, Hc_std = 0.05):
+        self.type = 'long_shakti'
         self.side_len_x = 4*self.unit_cells_x+1
         self.side_len_y = 4*self.unit_cells_y+1
         grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
@@ -163,8 +166,65 @@ class ASI_RPM():
                         grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
         self.lattice = grid
 
+
+        def long_shakti(self, Hc_mean = 0.062, Hc_std = 0.05):
+            self.type = 'long_shakti'
+            self.side_len_x = 4*self.unit_cells_x+1
+            self.side_len_y = 4*self.unit_cells_y+1
+            grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
+            for x in range(0, self.side_len_x):
+                for y in range(0, self.side_len_y):
+                    if (x+y)%2 != 0:
+                        if y%2 == 0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        else:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,1.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                    else:
+                        if x%2 ==0:     #and y%(self.side_len_y-1)!=0 and x%(self.side_len_x-1)!=0
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,0])
+                        else:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+            for x in range(0, self.side_len_x):
+                for y in range(0, self.side_len_y):
+                    if (y-2)%8==0:
+                        if (x-1)%8==0 or (x-3)%8==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                    if (y-6)%8==0:
+                        if (x-5)%8==0 or (x-7)%8==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                    if (x-2)%8==0:
+                        if (y-5)%8==0 or (y-7)%8==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                    if (x-6)%8==0:
+                        if (y-1)%8==0 or (y-3)%8==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+            for x in range(0, self.side_len_x):
+                for y in range(0, self.side_len_y):
+                    if (y-2)%8==0:
+                        if (x-5)%8==0 or (x-7)%8==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                        if (x-6)%8==0:
+                            grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,2.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                    if (y-6)%8==0:
+                        if (x-1)%8==0 or (x-3)%8==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                        if (x-2)%8==0:
+                            grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,2.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                    if (x-2)%8==0:
+                        if (y-1)%8==0 or (y-3)%8==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                        if (y-2)%8==0:
+                            grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,0.,2.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                    if (x-6)%8==0:
+                        if (y-5)%8==0 or (y-7)%8==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                        if (y-6)%8==0:
+                            grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,0.,2.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+            self.lattice = grid
+
     def tetris(self, Hc_mean = 0.03, Hc_std = 0.05):
         #Working on it
+        self.type = 'tetris'
         self.side_len_x = 16*self.unit_cells_x+1
         self.side_len_y = 16*self.unit_cells_y+1
         grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
@@ -218,6 +278,8 @@ class ASI_RPM():
                     grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
                     grid[x+1,y-1] = np.array([(x+1)*self.unit_cell_len,(y-1)*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
         self.lattice = grid
+
+
     '''
     def kagome2(self, , Hc_mean = 0.03, Hc_std = 0.05):
         self.type = 'kagome'
@@ -259,18 +321,19 @@ class ASI_RPM():
         Mz = grid[:,:,5].flatten()
         Hc = grid[:,:,6].flatten()
         C = grid[:,:,7].flatten()
+        Charge = grid[:,:,8].flatten()
         fig, ax =plt.subplots(ncols = 2,sharex=True, sharey=True)
         plt.set_cmap(cm.jet)
         graph = ax[0].quiver(X, Y, Mx, My, Hc, angles='xy', scale_units='xy',  pivot = 'mid')
-        ax[0].set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
-        ax[0].set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
+        ax[0].set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
+        ax[0].set_ylim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
         ax[0].set_title('Coercive Field')
         cb1 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax[0], format='%.2e',boundaries = np.linspace(np.min(Hc[np.nonzero(Hc)]), max(Hc),1000))
         cb1.locator = MaxNLocator( nbins = 7)
         cb1.update_ticks()
         graph = ax[1].quiver(X, Y, Mx, My, C, angles='xy', scale_units='xy',  pivot = 'mid')
-        ax[1].set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
-        ax[1].set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
+        ax[1].set_xlim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
+        ax[1].set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
         ax[1].set_title('Counts')
         cb2 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax[1])
         cb2.locator = MaxNLocator( nbins = 5)
@@ -282,6 +345,11 @@ class ASI_RPM():
             plt.gca().yaxis.set_major_locator( MaxNLocator(nbins = 6) )
         plt.ticklabel_format(style='sci', scilimits=(0,0))
         plt.tight_layout()
+        fig, ax =plt.subplots()
+        plt.scatter(X, Y, c = Charge)
+        plt.quiver(X, Y, Mx, My, C, angles='xy', scale_units='xy',  pivot = 'mid')
+        ax.set_xlim([-1*self.unit_cell_len, np.max(X)])
+        ax.set_ylim([-1*self.unit_cell_len, np.max(Y)])
         plt.draw()
         plt.show()
         
@@ -316,13 +384,12 @@ class ASI_RPM():
         grid = copy.deepcopy(self.lattice)
         unrelaxed = True
         Happlied[Happlied == -0.] = 0.
-        print(Happlied)
         while unrelaxed == True:
             flipcount = 0
             for x in range(0, self.side_len_x):
                 for y in range(0, self.side_len_y):
                     if abs(grid[x,y,6]) != 0:
-                        unit_vector = grid[x,y,3:6]/np.linalg.norm(grid[x,y,3:6])
+                        unit_vector = grid[x,y,3:6]
                         field = np.dot(np.array(Happlied+self.Hlocal2(x,y, n=n)), unit_vector)
                         #print(field)
                         if field < -grid[x,y,6]:
@@ -432,13 +499,13 @@ class ASI_RPM():
         graph = ax[0].quiver(X, Y, Hx, Hy, angles='xy', scale_units='xy',  pivot = 'mid')
         #qk = ax[0].quiverkey(graph, 0.45, 0.9, 10, r'$mT$', labelpos='E',
         #           coordinates='figure')
-        ax[0].set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
-        ax[0].set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
+        ax[0].set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
+        ax[0].set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
         ax[0].set_title('In Plane Field')
         #fig.colorbar(graph, ax = ax[0],boundaries = np.linspace(np.min(Hc[np.nonzero(Hc)]), max(Hc),1000))
         graph = ax[1].scatter(X, Y, Hz, marker='o', )
-        ax[1].set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
-        ax[1].set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
+        ax[1].set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
+        ax[1].set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
         ax[1].set_title('Out of Plane Field')
         for axes in ax:
             axes.plot([1, 2, 3], [1, 2, 3])
@@ -450,22 +517,12 @@ class ASI_RPM():
         plt.draw()
         plt.show()
 
-
-    
     def vertexCharge(self):
         '''
-        Working on it
+        Old Vertex charge determining function
         '''
         grid = self.lattice
-        #print("unit cells x = ",self.unit_cells_x)
-        #print("unit cells y = ",self.unit_cells_y)
         chargeGrid = np.zeros(((self.unit_cells_x-1)*(self.unit_cells_y-1), 3))     
-        #print("charge grid initial =",chargeGrid)
-        #Hl = []
-        #x1 = col - 1
-        #x2 = col 
-        #y1 = row
-        #y2 = row
         i = 0
         for y in range(2, self.side_len_y-2,2):
             for x in range(2, self.side_len_x-2,2):
@@ -474,57 +531,96 @@ class ASI_RPM():
                     m2 = grid[x+1,y,3]
                     m3 = grid[x,y+1,4]
                     m4 = grid[x,y-1,4]
-                    #print("m1 =",m1)
-                    #print("m2 =",m2)
-                    #print("m3 =",m3)
-                    #print("m4 =",m4)
                     charge = m1-m2-m3+m4
-                    #print("charge = ",x ,y, charge)
-                    #grid[x,y,8] = charge
-                    #print("i =", i)
                     chargeGrid[i] = np.array([grid[x,y,0],grid[x,y,1],charge])
-                    #print("charge grid =",chargeGrid)
                     i = i+1
-                    #x+=x
-            #y=y+1
-        #self.lattice = grid
         return(chargeGrid)
+
+    def vertexCharge2(self):
+        grid = copy.deepcopy(self.lattice)
+        for x in np.arange(0, self.side_len_x):
+            for y in np.arange(0, self.side_len_y):
+                if np.isnan(grid[x,y,8])!=True:
+                    x1 = x - 1
+                    x2 = x + 2
+                    y1 = y - 1
+                    y2 = y + 2
+
+                    if x1<0:
+                        x1 = 0
+                    if x2>self.side_len_x:
+                        x2 = self.side_len_x
+                    if y1<0:
+                        y1 = 0
+                    if y2>self.side_len_y:
+                        y2 = self.side_len_y
+                    local = grid[x1:x2,y1:y2]
+                    #print(local[:,:,3])
+                    charge = np.sum(local[0:2,0:2, 3:6])-np.sum(local[1:3,1:3, 3:6])
+                    if self.type == 'kagome':
+                        if x==0:
+                            charge = np.sum(local[0,:,3]) -np.sum(local[1,:,3])+np.sum(local[:,0,4]) -np.sum(local[:,2,4])
+                        elif x==self.side_len_x-1:
+                            charge = np.sum(local[:,:,3]) -np.sum(local[:,:,3])+np.sum(local[:,0,4]) -np.sum(local[:,2,4])
+                        elif (x-2)%4:
+                            if (y-2)%4:
+                                charge = np.sum(local[0,:,3]) -np.sum(local[1,:,3])+np.sum(local[:,0,4]) -np.sum(local[:,2,4])
+                            else:
+                                charge = np.sum(local[1,:,3]) -np.sum(local[2,:,3])+np.sum(local[:,0,4]) -np.sum(local[:,2,4])
+                        elif (x)%4:
+                            if (y-2)%4:
+                                charge = np.sum(local[1,:,3]) -np.sum(local[2,:,3])+np.sum(local[:,0,4]) -np.sum(local[:,2,4])
+                            else:
+                                charge = np.sum(local[0,:,3]) -np.sum(local[1,:,3])+np.sum(local[:,0,4]) -np.sum(local[:,2,4])
+                        if charge>3:
+                            charge = 1
+                        elif charge<-3:
+                            charge = -1
+                        else:
+                            charge = 0
+
+                    grid[x,y, 8] = charge
+                    
+                    #print(np.sum(np.multiply(local[:,:, 3:6]), np.array([[1,0],[0,-1]])))
+                    #print(local)
+                    
+                    #local = grid[x-1:x+3,y-1:y+3,:]
+                    #plt.quiver(grid[:,:,0].flatten(), grid[:,:,1].flatten(),grid[:,:,3].flatten(),grid[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
+                    #plt.scatter(grid[:,:,0].flatten(), grid[:,:,0].flatten(), c = grid[:,:,8].flatten())
+                    #plt.plot(grid[x,y,0],grid[x,y,1], 'o')
+                    #plt.quiver(local[:,:,0].flatten(), local[:,:,1].flatten(),local[:,:,3].flatten(),local[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
+                    #plt.show()
+        self.lattice = grid
                     
     
     def graphCharge(self):
             '''
             Plots the positions and directions of the bar magnetisations as a quiver graph
             '''
+            self.vertexCharge2()
             grid = self.lattice
-            chargeGrid = self.vertexCharge()
-            print("vertex charge tech yields =",chargeGrid)
-            X1 = grid[:,:,0].flatten()
-            Y1 = grid[:,:,1].flatten()
+            X = grid[:,:,0].flatten()
+            Y = grid[:,:,1].flatten()
             z = grid[:,:,2].flatten()
             Mx = grid[:,:,3].flatten()
             My = grid[:,:,4].flatten()
             Mz = grid[:,:,5].flatten()
             Hc = grid[:,:,6].flatten()
             C = grid[:,:,7].flatten()
-            X2 = chargeGrid[:,0]
-            Y2 = chargeGrid[:,1]
-            MagCharge = chargeGrid[:,2]
-            #print("x2 =",X2)
-            #print("y2 =",Y2)
-            #print("MagCharge =",MagCharge)
+            MagCharge = grid[:,:,8].flatten()
             
             fig = plt.figure(figsize=(6,6))
             ax = fig.add_subplot(111)
-            ax.set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
-            ax.set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
+            ax.set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
+            ax.set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
             ax.set_title("Vertex Magnetic Charge Map",fontsize=14)
             #ax.set_xlabel("XAVG",fontsize=12)
             #ax.set_ylabel("YAVG",fontsize=12)
             #ax.grid(True,linestyle='-',color='0.75')
 
-            ax.quiver(X1, Y1, Mx, My, angles='xy', scale_units='xy',  pivot = 'mid', zorder=1)
+            ax.quiver(X, Y, Mx, My, angles='xy', scale_units='xy',  pivot = 'mid', zorder=1)
             # scatter with colormap mapping to z value
-            ax.scatter(X2,Y2,s=80,c=MagCharge, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' );
+            ax.scatter(X,Y,s=80,c=MagCharge, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' );
             
             #Y2 = grid[:,:,1].flatten()
             #Charge = grid[:,:,8].flatten()
@@ -541,18 +637,6 @@ class ASI_RPM():
             #ax.set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
             #ax.set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
             #ax.set_title('Vertex Charge Map')
-            
-            
-            
-            
-                        
-            #cb1 = ax.colorbar(graph, fraction=0.046, pad=0.04, ax = ax, format='%.2e',boundaries = np.linspace(np.min(Hc[np.nonzero(Hc)]), max(Hc),1000))
-            #cb1.locator = MaxNLocator( nbins = 7)
-            #cb1.update_ticks()
-            plt.ticklabel_format(style='sci', scilimits=(0,0))
-            plt.tight_layout()
-            #plt.draw()
-            #plt.show()
 
 
     
@@ -641,14 +725,13 @@ class ASI_RPM():
         return(np.array([np.nanmean(mx),np.nanmean(my)]))
         
     def monopoleDensity(self):
-
-		#4in/0out have a charge of 1
-		#3in/1out have a charge of 0.5
-		#The density is then calculated by dividing by the total area minus the edges
-
-    	grid = self.lattice
-    	chargeGrid = self.vertexCharge()
-    	return(np.sum(np.absolute(chargeGrid[:,2]))/(4*(self.unit_cells_x-1)*(self.unit_cells_y-1)))
+        #4in/0out have a charge of 1
+        #3in/1out have a charge of 0.5
+        #The density is then calculated by dividing by the total area minus the edges
+        self.vertexCharge2()
+        grid = self.lattice
+        #magcharge = grid[:,:,8].flatten()
+        return(np.nanmean(np.absolute(grid[:,:,8])))
 
     def returnLattice(self):
         return(self.lattice)
