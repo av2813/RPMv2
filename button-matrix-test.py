@@ -90,15 +90,10 @@ def matrix(unitCellx=4,unitCelly=4):
             #self.btn = Button(self, frame, command=self.colourer, bg = "blue") #create a button inside frame 
             #self.btn.grid(row=row_index, column=col_index, sticky=N+S+E+W)  
             #n = n+1
-    
     print (colorCounter)
-    
     window2=Toplevel(root)
-    
-    
     Button(window2, text="Quit", command=root.destroy).pack()
     Button(window2, text="Write", command=write).pack()
-    
     root.mainloop()
 
 def write(folder = os.getcwd()):
