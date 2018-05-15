@@ -732,14 +732,12 @@ class ASI_RPM():
         grid = self.lattice
         #magcharge = grid[:,:,8].flatten()
         return(np.nanmean(np.absolute(grid[:,:,8])))
-
-    def hysteresisLoop(self):
-        
-
-    def fieldTemperature(self, Hs, Hmax = 4*np.mean(self.lattice[:,:,6]), n=3, nangle=36):
-               
+    
+    def fieldTemperature(self, Hs, Hmax = None, n=3, nangle=36):
         #Hs = (Beta - 9.12)/0.201
-        Hmax = 4*self.Hc
+        Hc = np.mean(self.lattice[:,:,6])
+        if Hmax ==None:
+            Hmax = 4*Hc 
         Happlied = Hmax
         while np.absolute(Happlied) > 0.75*Hc:
             for angle in 2*np.pi*np.random.random(nangle):

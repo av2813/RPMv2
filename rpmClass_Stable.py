@@ -756,7 +756,7 @@ class ASI_RPM():
         return(np.nanmean(np.absolute(grid[:,:,8])))
 
     def hysteresisLoop(self):
-        
+        print('test')
 
 
     def returnLattice(self):
