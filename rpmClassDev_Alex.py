@@ -16,6 +16,7 @@ class ASI_RPM():
         self.lattice = lattice
         self.type = None
         self.Hc = None
+        self.Hc_std = None
         self.previous = None
         self.unit_cells_x = unit_cells_x
         self.unit_cells_y = unit_cells_y
@@ -37,7 +38,8 @@ class ASI_RPM():
         file = file.replace('.','p')
         parameters = np.array([self.unit_cells_x,self.unit_cells_y,\
             self.bar_length,self.vertex_gap,self.bar_width,\
-            self.bar_thickness,self.magnetisation, self.side_len_x, self.side_len_y, self.type])
+            self.bar_thickness,self.magnetisation, self.side_len_x,\
+            self.side_len_y, self.type, self.Hc, self.Hc_std])
         np.savez(os.path.join(folder,file), self.lattice, parameters)
 
     def load(self, file):
@@ -49,14 +51,16 @@ class ASI_RPM():
         parameters = npzfile['arr_1']
         self.unit_cells_x = np.int(parameters[0])
         self.unit_cells_y = np.int(parameters[1])
-        self.bar_length = parameters[2]
-        self.vertex_gap = parameters[3]
-        self.bar_width = parameters[4]
-        self.bar_thickness = parameters[5]
-        self.magnetisation = parameters[6]
+        self.bar_length = np.float(parameters[2])
+        self.vertex_gap = np.float(parameters[3])
+        self.bar_width = np.float(parameters[4])
+        self.bar_thickness = np.float(parameters[5])
+        self.magnetisation = np.float(parameters[6])
         self.side_len_x = np.int(parameters[7])
         self.side_len_y = np.int(parameters[8])
         self.type = parameters[9]
+        self.Hc = np.float(parameters[10])
+        self.Hc_std = np.float(parameters[11])
         self.lattice = npzfile['arr_0']
         
     def square(self, Hc_mean = 0.03, Hc_std = 0.05):
@@ -68,6 +72,8 @@ class ASI_RPM():
         One thing to potentially change is to have the positions in nanometers
         '''
         self.type = 'square'
+        self.Hc = Hc_mean
+        self.Hc_std = Hc_std
         self.side_len_x = 2*self.unit_cells_x+1
         self.side_len_y = 2*self.unit_cells_y+1
         grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 9))        
@@ -81,7 +87,7 @@ class ASI_RPM():
                     else:
                         grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,1.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                 else:
-                    if x%2 ==0:
+                    if x%2 ==0 and x!=0 and y!=0 and x!=self.side_len_x-1 and y!=self.side_len_x-1:
                         grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,0])
                     else:
                         grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
@@ -94,6 +100,8 @@ class ASI_RPM():
         Generates a normally distributed range of coercive fields of the bars using Hc_mean and Hc_std
         '''
         self.type = 'kagome'
+        self.Hc = Hc_mean
+        self.Hc_std = Hc_std
         xfactor = 2*np.cos(np.pi/6)
         yfactor = 2*np.sin(np.pi/6)
         self.side_len_x = 2*self.unit_cells_x+1
@@ -135,6 +143,8 @@ class ASI_RPM():
 
     def short_shakti(self, Hc_mean = 0.03, Hc_std = 0.05):
         self.type = 'long_shakti'
+        self.Hc = Hc_mean
+        self.Hc_std = Hc_std
         self.side_len_x = 4*self.unit_cells_x+1
         self.side_len_y = 4*self.unit_cells_y+1
         grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
@@ -169,6 +179,8 @@ class ASI_RPM():
 
         def long_shakti(self, Hc_mean = 0.062, Hc_std = 0.05):
             self.type = 'long_shakti'
+            self.Hc = Hc_mean
+            self.Hc_std = Hc_std
             self.side_len_x = 4*self.unit_cells_x+1
             self.side_len_y = 4*self.unit_cells_y+1
             grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
@@ -223,8 +235,9 @@ class ASI_RPM():
             self.lattice = grid
 
     def tetris(self, Hc_mean = 0.03, Hc_std = 0.05):
-        #Working on it
         self.type = 'tetris'
+        self.Hc = Hc_mean
+        self.Hc_std = Hc_std
         self.side_len_x = 16*self.unit_cells_x+1
         self.side_len_y = 16*self.unit_cells_y+1
         grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
@@ -347,9 +360,9 @@ class ASI_RPM():
         plt.tight_layout()
         fig, ax =plt.subplots()
         plt.scatter(X, Y, c = Charge)
-        plt.quiver(X, Y, Mx, My, C, angles='xy', scale_units='xy',  pivot = 'mid')
-        ax.set_xlim([-1*self.unit_cell_len, np.max(X)])
-        ax.set_ylim([-1*self.unit_cell_len, np.max(Y)])
+        plt.quiver(X, Y, Mx, My, Hc, angles='xy', scale_units='xy',  pivot = 'mid')
+        ax.set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
+        ax.set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
         plt.draw()
         plt.show()
         
@@ -391,15 +404,11 @@ class ASI_RPM():
                     if abs(grid[x,y,6]) != 0:
                         unit_vector = grid[x,y,3:6]
                         field = np.dot(np.array(Happlied+self.Hlocal2(x,y, n=n)), unit_vector)
-                        #print(field)
                         if field < -grid[x,y,6]:
-                            #print(grid[x,y,3:5])
                             grid[x,y,3:5] = np.negative(grid[x,y,3:5])
-                            #print(grid[x,y,3:5])
                             grid[x,y,:][grid[x,y,:]==0.] = 0.
                             grid[x,y,7] += 1
                             flipcount += 1
-                            #print(grid[x,y,3:5])
             print("no of flipped spins in relax", flipcount)
             grid[grid==-0.] = 0.
             if flipcount > 0:
@@ -407,9 +416,13 @@ class ASI_RPM():
             else:
                 unrelaxed = False
             self.lattice = grid
+
+    def relax2(self, Happlied = np.array([0., 0., 0.]), n=10):
+        grid = copy.deepcopy(self.lattice)
+        Happlied[Happlied == 0.] = 0.
     
     
-    def fieldsweep(self, Hmax, steps, Htheta, n=10, loops=1, folder = None):
+    def fieldSweep(self, Hmax, steps, Htheta, n=10, loops=1, folder = None):
         '''
         Sweeps through field up to a maximum field of Hmax in 
         '''
@@ -470,7 +483,7 @@ class ASI_RPM():
         B *= 1e-7
         return(B)
 
-    def fieldreturn(self, n=5):
+    def fieldReturn(self, n=5):
         grid = self.lattice
         field = np.zeros((self.side_len_x,self.side_len_y,3))
         for x in range(0, self.side_len_x):
@@ -483,7 +496,7 @@ class ASI_RPM():
         Hz = field[:,:, 2].flatten()
         return(X,Y,Hx,Hy,Hz)
     
-    def fieldplot(self, n=5):
+    def fieldPlot(self, n=5):
         grid = self.lattice
         field = np.zeros((self.side_len_x,self.side_len_y,3))
         for x in range(0, self.side_len_x):
@@ -556,7 +569,7 @@ class ASI_RPM():
                         y2 = self.side_len_y
                     local = grid[x1:x2,y1:y2]
                     #print(local[:,:,3])
-                    charge = np.sum(local[0:2,0:2, 3:6])-np.sum(local[1:3,1:3, 3:6])
+                    charge = (np.sum(local[0:2,0:2, 3:6])-np.sum(local[1:3,1:3, 3:6]))/4.
                     if self.type == 'kagome':
                         if x==0:
                             charge = np.sum(local[0,:,3]) -np.sum(local[1,:,3])+np.sum(local[:,0,4]) -np.sum(local[:,2,4])
@@ -580,6 +593,7 @@ class ASI_RPM():
                             charge = 0
 
                     grid[x,y, 8] = charge
+                    print(charge)
                     
                     #print(np.sum(np.multiply(local[:,:, 3:6]), np.array([[1,0],[0,-1]])))
                     #print(local)
@@ -622,21 +636,6 @@ class ASI_RPM():
             # scatter with colormap mapping to z value
             ax.scatter(X,Y,s=80,c=MagCharge, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' );
             
-            #Y2 = grid[:,:,1].flatten()
-            #Charge = grid[:,:,8].flatten()
-            #Charge = np.array(Charge, dtype = np.double)
-            #Charge[ Charge == 0] = np.nan
-            #cmap = matplotlib.cm.get_cmap('viridis')
-            #normalize = matplotlib.colors.Normalize(vmin=min(MagCharge), vmax=max(MagCharge))
-            #colors = [cmap(normalize(value)) for value in MagCharge]
-            #ax = plt.gca()
-            #fig, ax =plt.subplots(ncols = 2,sharex=True, sharey=True)
-            #plt.set_cmap(cm.jet)
-            
-            #ax.scatter(X2,Y2,color=colors)
-            #ax.set_xlim([-1*self.unit_cell_len, self.side_len_x*self.unit_cell_len])
-            #ax.set_ylim([-1*self.unit_cell_len, self.side_len_y*self.unit_cell_len])
-            #ax.set_title('Vertex Charge Map')
 
 
     
@@ -696,25 +695,6 @@ class ASI_RPM():
         print('Correlation factor:',same/total)
         return(same/total)
         
-    """
-    def correlation(self, lattice1, lattice2):
-        l1 = lattice1.returnLattice()
-        l2 = lattice2..returnLattice()
-        total = 0
-        same = 0
-        for x in range(0, self.side_len_x):
-            for y in range(0, self.side_len_y):
-                if lattice1[x,y,4]!=0:
-                    if np.array_equal(lattice1[x,y, 2:4], lattice2[x,y,2:4]) ==True:
-                        same+=1.0
-                        print("same running total",same)
-                    total +=1.0
-                    print("total running total",total)
-        print("same total",same)
-        print("absolute total", total)
-        #q 
-        return(same/total)
-    """
 
     def netMagnetisation(self):
         grid = copy.deepcopy(self.lattice)
@@ -733,18 +713,51 @@ class ASI_RPM():
         #magcharge = grid[:,:,8].flatten()
         return(np.nanmean(np.absolute(grid[:,:,8])))
     
-    def fieldTemperature(self, Hs, Hmax = None, n=3, nangle=36):
+    def fieldTemperature(self, Hs, n=3, nangle=36):
         #Hs = (Beta - 9.12)/0.201
-        Hc = np.mean(self.lattice[:,:,6])
-        if Hmax ==None:
-            Hmax = 4*Hc 
+        Hc = self.Hc
+        print(Hc)
+        Hmax = (1.5*self.Hc+ 4.*self.Hc_std*self.Hc+Hs)
         Happlied = Hmax
-        while np.absolute(Happlied) > 0.75*Hc:
+        while np.absolute(Happlied) > (Hc-4.*self.Hc_std*self.Hc):
             for angle in 2*np.pi*np.random.random(nangle):
-                print(angle)
+                print(angle, Happlied)
                 H = Happlied*np.array([np.cos(angle), np.sin(angle), 0.])
                 self.relax(H, n = n)
-            Happlied = np.sign(Happlied)*np.absolute(Happlied - Hs)
+            Happlied = -np.sign(Happlied)*(np.absolute(Happlied)-Hs)
+
+    def localCorrelation(self):
+        print('working on it')
+
+    def domainSize(self):
+        grid = copy.deepcopy(self.lattice)
+        
+        #grid[grid[:,:,0] == 0] = np.nan
+        #grid[grid[:,:,6]==0] = np.nan
+        X = grid[:,:,0].flatten()
+        Y = grid[:,:,1].flatten()
+        z = grid[:,:,2].flatten()
+        Mx = grid[:,:,3].flatten()
+        My = grid[:,:,4].flatten()
+        Mz = grid[:,:,5].flatten()
+        Hc = grid[:,:,6].flatten()
+        C = grid[:,:,7].flatten()
+        charge = grid[:,:,8].flatten()
+        fig = plt.figure(figsize=(6,6))
+        ax = fig.add_subplot(111)
+        ax.set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
+        ax.set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
+        ax.set_title("Vertex Magnetic Charge Map",fontsize=14)
+        # scatter with colormap mapping to z value
+        ax.scatter(X,Y,s=80,c=Mx, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' );
+        fig = plt.figure(figsize=(6,6))
+        ax = fig.add_subplot(111)
+        ax.set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
+        ax.set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
+        ax.set_title("Vertex Magnetic Charge Map",fontsize=14)
+        # scatter with colormap mapping to z value
+        ax.scatter(X,Y,s=80,c=My, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' )
+        plt.show()
 
     def returnLattice(self):
         return(self.lattice)

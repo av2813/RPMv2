@@ -19,14 +19,20 @@ squareLattice = rpm.ASI_RPM(10, 10, bar_length = bar_length,\
  vertex_gap = vertex_gap, bar_thickness = bar_thickness,\
  bar_width = bar_width, magnetisation = magnetisation)
 
-squareLattice.square(Hc, 0.05)
+squareLattice.kagome(Hc, 0.05)
 monopole = []
 mag =[]
-fieldsteps = np.linspace(1, 60, 10)*1e-4
+fieldsteps = np.arange(0.1, 60, 1.)*1e-3
 for Hs in fieldsteps:
-	squareLattice.fieldTemperature(Hs, Hc, n=3, nangle=36)
+	print(Hs)
+	squareLattice.randomMag()
+	squareLattice.fieldTemperature(Hs, n=3, nangle=1)
+	squareLattice.graph()
 	monopole.append(squareLattice.monopoleDensity())
-	mag.append(squareLattice.netMagnatisation())
+	mag.append(squareLattice.netMagnetisation())
+	print(mag, monopole)
+	squareLattice.graph()
+	squareLattice.save('TemperatureSweep'+str(Hs).replace('.', 'p'))
 
 
 

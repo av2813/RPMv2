@@ -1,4 +1,4 @@
-import rpmClass_Stable as rpm
+import rpmClassDev_Alex as rpm
 import os
 import importlib
 import matplotlib.pyplot as plt
@@ -18,14 +18,32 @@ magnetisation = 800e3
 
 #Graphing and save/load test
 kagomeLattice = rpm.ASI_RPM(5, 5)
-kagomeLattice1 = rpm.ASI_RPM(5, 5)
-kagomeLattice1.square()
+kagomeLattice1 = rpm.ASI_RPM(10, 10)
+kagomeLattice1.kagome()
 #kagomeLattice1.graph()
 #kagomeLattice.kagome2()
 #filename = 'KagomeTest.npy'
 #kagomeLattice.save(os.path.join(os.getcwd(),filename))
 kagomeLattice1.randomMag()
-kagomeLattice1.graph()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.randomMag()
+kagomeLattice1.domainSize()
+kagomeLattice1.relax()
 #kagomeLattice.load(os.path.join(os.getcwd(),filename))
 #kagomeLattice.graph()
 #kagomeLattice.fieldplot()
@@ -33,7 +51,7 @@ kagomeLattice1.graph()
 
 kagomeLattice1.vertexCharge2()
 kagomeLattice1.graphCharge()
-print(kagomeLattice1.monopoleDensity()/4)
+print(kagomeLattice1.monopoleDensity())
 plt.show()
 '''
 s = rpm.ASI_RPM(5,5)
