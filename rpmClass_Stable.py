@@ -755,8 +755,159 @@ class ASI_RPM():
         #magcharge = grid[:,:,8].flatten()
         return(np.nanmean(np.absolute(grid[:,:,8])))
 
-    def hysteresisLoop(self):
-        print('test')
+    def vertexType(self):
+        '''
+        Only works for square
+
+        '''
+        grid = copy.deepcopy(self.lattice)
+        Vertex = np.zeros((self.side_len_x, self.side_len_y, 5))
+        Type1 = np.array([-1,1,1,-1])
+        Type21 = np.array([-1,-1,1,1])
+        Type22 = np.array([1,1,1,1])
+        Type3 = np.array([1,1,1,-1])
+        Type3 = np.array([1,-1,1,1])
+        Type3 = np.array([-1,1,1,1])
+        Type3 = np.array([1,1,-1,1])
+        Type4 = np.array([1,-1,1,-1])
+        for x in np.arange(0, self.side_len_x):
+            for y in np.arange(0, self.side_len_y):
+                Corr_local = []
+                if np.isnan(grid[x,y,8])!=True:
+                    x1 = x - 3
+                    x2 = x + 4
+                    y1 = y - 3
+                    y2 = y + 4
+
+                    if x1<0:
+                        x1 = 0
+                    if x2>self.side_len_x:
+                        x2 = self.side_len_x
+                    if y1<0:
+                        y1 = 0
+                    if y2>self.side_len_y:
+                        y2 = self.side_len_y
+                    local = grid[x1:x2,y1:y2]
+                    spin_code0 = np.array([grid[x+1,y,3],grid[x-1,y,3],grid[x,y+1,4],grid[x,y-1,4]])
+                    Vertex[x,y,0:4] = spin_code0
+                    if np.array_equal(Vertex[x,y,0:4],Type1) or np.array_equal(Vertex[x,y,0:4],-1.*Type1):
+                        Vertex[x,y,4] = 1
+                    elif np.array_equal(Vertex[x,y,0:4],Type4) or np.array_equal(Vertex[x,y,0:4], -1.*Type4):
+                        Vertex[x,y,4] = 4
+                    elif np.array_equal(Vertex[x,y,0:4], Type21) or np.array_equal(Vertex[x,y,0:4], -1.*Type21) or np.array_equal(Vertex[x,y,0:4],Type22) or np.array_equal(Vertex[x,y,0:4],-1.*Type22):
+                        Vertex[x,y,4] = 2
+                    else:
+                        Vertex[x,y,4] = 3
+                else:
+                    Vertex[x,y,:] = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
+        return(Vertex)
+
+    def vertexTypeMap(self):
+        '''
+        Only works with square
+        '''
+        Vertex = self.vertexType()
+        X = self.lattice[:,:,0].flatten()
+        Y = self.lattice[:,:,1].flatten()
+        z = self.lattice[:,:,2].flatten()
+        Mx = self.lattice[:,:,3].flatten()
+        My = self.lattice[:,:,4].flatten()
+        Mz = self.lattice[:,:,5].flatten()
+        Hc = self.lattice[:,:,6].flatten()
+        C = self.lattice[:,:,7].flatten()
+        charge = self.lattice[:,:,8].flatten()
+        Type = Vertex[:,:,4].flatten()
+        fig = plt.figure(figsize=(6,6))
+        ax = fig.add_subplot(111)
+        ax.set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
+        ax.set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
+        graph = ax.scatter(X,Y,c = Vertex[:,:,4], marker = 'o', cmap = cm.plasma, zorder=2)
+        cb2 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax)
+        cb2.locator = MaxNLocator(nbins = 5)
+        cb2.update_ticks()
+        ax.quiver(X,Y,Mx,My,angles='xy', scale_units='xy',  pivot = 'mid')
+        plt.show()
+
+    def vertexTypePercentage(self):
+        '''
+        Only works with square
+        '''
+        Vertex = self.vertexType()
+        Type1 = np.nansum(Vertex[:,:,4]==1.)
+        Type2 = np.nansum(Vertex[:,:,4]==2.)
+        Type3 = np.nansum(Vertex[:,:,4]==3.)
+        Type4 = np.nansum(Vertex[:,:,4]==4.)
+        total = np.sum([Type1, Type2, Type3, Type4])
+        print(total, Type1,Type2,Type3,Type4)
+        vertices = {'Type1': Type1/total,'Type2': Type2/total,'Type3': Type3/total,'Type4': Type4/total}
+        print(vertices)
+        return(vertices)
+
+    def localCorrelation(self):
+        '''
+        Only works for square Lattice
+        '''
+        grid = copy.deepcopy(self.lattice)
+        Correlation = np.zeros((self.side_len_x, self.side_len_y, 1))
+        for x in np.arange(0, self.side_len_x):
+            for y in np.arange(0, self.side_len_y):
+                Corr_local = []
+                if np.isnan(grid[x,y,8])!=True:
+                    x1 = x - 3
+                    x2 = x + 4
+                    y1 = y - 3
+                    y2 = y + 4
+
+                    if x1<0:
+                        x1 = 0
+                    if x2>self.side_len_x:
+                        x2 = self.side_len_x
+                    if y1<0:
+                        y1 = 0
+                    if y2>self.side_len_y:
+                        y2 = self.side_len_y
+                    local = grid[x1:x2,y1:y2]
+                    spin_code0 = np.array([grid[x+1,y,3],grid[x-1,y,3],grid[x,y+1,4],grid[x,y-1,4]])
+
+                    #print(np.sum(np.multiply(local[:,:, 3:6]), np.array([[1,0],[0,-1]])))
+                    #print(local)
+                    for i in np.arange(x1,x2):
+                        for j in np.arange(y1,y2):
+                            if np.isnan(grid[i,j,8])!=True:
+                                spin_code = np.array([grid[i+1,j,3],grid[i-1,j,3],grid[i,j+1,4],grid[i,j-1,4]])
+                                Corr_local.append(np.sum(np.equal(spin_code,spin_code0))/np.size(spin_code))
+                    Corr = (np.sum(np.array(Corr_local))-1.)/(np.size(Corr_local)-1.)
+                    Correlation[x,y,0] = Corr
+                else:
+                    Correlation[x,y,0] = np.nan
+
+                    
+                    #local = grid[x-1:x+3,y-1:y+3,:]
+                    #plt.quiver(grid[:,:,0].flatten(), grid[:,:,1].flatten(),grid[:,:,3].flatten(),grid[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
+                    #plt.scatter(grid[:,:,0].flatten(), grid[:,:,0].flatten(), c = grid[:,:,8].flatten())
+                    #plt.plot(grid[x,y,0],grid[x,y,1], 'o')
+                    #plt.quiver(local[:,:,0].flatten(), local[:,:,1].flatten(),local[:,:,3].flatten(),local[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
+                    #plt.show()
+        X = grid[:,:,0].flatten()
+        Y = grid[:,:,1].flatten()
+        z = grid[:,:,2].flatten()
+        Mx = grid[:,:,3].flatten()
+        My = grid[:,:,4].flatten()
+        Mz = grid[:,:,5].flatten()
+        Hc = grid[:,:,6].flatten()
+        C = grid[:,:,7].flatten()
+        charge = grid[:,:,8].flatten()
+        fig = plt.figure(figsize=(6,6))
+        ax = fig.add_subplot(111)
+        ax.set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
+        ax.set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
+        graph = ax.scatter(X,Y,c = Correlation[:,:,0], marker = 'o', cmap = cm.plasma, zorder=2)
+        cb2 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax)
+        cb2.locator = MaxNLocator(nbins = 5)
+        cb2.update_ticks()
+        ax.quiver(X,Y,Mx,My,angles='xy', scale_units='xy',  pivot = 'mid')
+        plt.show()
+        return(Correlation)
 
 
     def returnLattice(self):

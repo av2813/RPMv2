@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as cl
@@ -76,13 +76,11 @@ class ASI_RPM():
         self.Hc_std = Hc_std
         self.side_len_x = 2*self.unit_cells_x+1
         self.side_len_y = 2*self.unit_cells_y+1
-        grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 9))        
-        for x in range(0, 2*self.unit_cells_x+1):
-            for y in range(0, 2*self.unit_cells_y+1):
+        grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
                 if (x+y)%2 != 0:
                     if y%2 == 0:
-                        xpos = x*(self.bar_length+self.vertex_gap)/2
-                        ypos = y*(self.bar_length+self.vertex_gap)/2
                         grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                     else:
                         grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,1.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
@@ -383,7 +381,6 @@ class ASI_RPM():
         l1 = lattice1.returnLattice()
         l2 = lattice2.returnLattice()
         diff = l2[:,:,7] - l1[:,:,7]
-        #print(diff)
         l1[:,:,7] = diff
         return(self(self.unit_cells_x, self.unit_cells_y,lattice = diff))
 
@@ -453,6 +450,7 @@ class ASI_RPM():
                         os.makedirs(folder)
                     self.save('Lattice_'+str(counter)+'Loop'+str(i)+'_FieldStrength'+str(np.round(j*1000,2))+'mT_Angle'+str(np.round(Htheta, 2)), folder = folder)
                 counter+=1
+            self.localCorrelation()
         return(np.array(fieldloops),np.array(q), np.array(mag), np.array(monopole))
     
     #for Hx, Hy in np.meshgrid(Hx_list, Hy_list, sparse = True):
@@ -525,7 +523,6 @@ class ASI_RPM():
             axes.set(adjustable='box-forced', aspect='equal')
         plt.ticklabel_format(style='sci', scilimits=(0,0))
         plt.tight_layout()
-        print(Hz)
         #fig.colorbar(graph, ax = ax[0],boundaries = np.linspace(np.min(Hz), max(Hz),1000))
         plt.draw()
         plt.show()
@@ -568,7 +565,6 @@ class ASI_RPM():
                     if y2>self.side_len_y:
                         y2 = self.side_len_y
                     local = grid[x1:x2,y1:y2]
-                    #print(local[:,:,3])
                     charge = (np.sum(local[0:2,0:2, 3:6])-np.sum(local[1:3,1:3, 3:6]))/4.
                     if self.type == 'kagome':
                         if x==0:
@@ -593,8 +589,6 @@ class ASI_RPM():
                             charge = 0
 
                     grid[x,y, 8] = charge
-                    print(charge)
-                    
                     #print(np.sum(np.multiply(local[:,:, 3:6]), np.array([[1,0],[0,-1]])))
                     #print(local)
                     
@@ -608,33 +602,31 @@ class ASI_RPM():
                     
     
     def graphCharge(self):
-            '''
-            Plots the positions and directions of the bar magnetisations as a quiver graph
-            '''
-            self.vertexCharge2()
-            grid = self.lattice
-            X = grid[:,:,0].flatten()
-            Y = grid[:,:,1].flatten()
-            z = grid[:,:,2].flatten()
-            Mx = grid[:,:,3].flatten()
-            My = grid[:,:,4].flatten()
-            Mz = grid[:,:,5].flatten()
-            Hc = grid[:,:,6].flatten()
-            C = grid[:,:,7].flatten()
-            MagCharge = grid[:,:,8].flatten()
-            
-            fig = plt.figure(figsize=(6,6))
-            ax = fig.add_subplot(111)
-            ax.set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
-            ax.set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
-            ax.set_title("Vertex Magnetic Charge Map",fontsize=14)
-            #ax.set_xlabel("XAVG",fontsize=12)
-            #ax.set_ylabel("YAVG",fontsize=12)
-            #ax.grid(True,linestyle='-',color='0.75')
-
-            ax.quiver(X, Y, Mx, My, angles='xy', scale_units='xy',  pivot = 'mid', zorder=1)
-            # scatter with colormap mapping to z value
-            ax.scatter(X,Y,s=80,c=MagCharge, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' );
+        '''
+        Plots the positions and directions of the bar magnetisations as a quiver graph
+        '''
+        self.vertexCharge2()
+        grid = self.lattice
+        X = grid[:,:,0].flatten()
+        Y = grid[:,:,1].flatten()
+        z = grid[:,:,2].flatten()
+        Mx = grid[:,:,3].flatten()
+        My = grid[:,:,4].flatten()
+        Mz = grid[:,:,5].flatten()
+        Hc = grid[:,:,6].flatten()
+        C = grid[:,:,7].flatten()
+        MagCharge = grid[:,:,8].flatten()            
+        fig = plt.figure(figsize=(6,6))
+        ax = fig.add_subplot(111)
+        ax.set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
+        ax.set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
+        ax.set_title("Vertex Magnetic Charge Map",fontsize=14)
+        #ax.set_xlabel("XAVG",fontsize=12)
+        #ax.set_ylabel("YAVG",fontsize=12)
+        #ax.grid(True,linestyle='-',color='0.75')
+        ax.quiver(X, Y, Mx, My, angles='xy', scale_units='xy',  pivot = 'mid', zorder=1)
+        # scatter with colormap mapping to z value
+        ax.scatter(X,Y,s=80,c=MagCharge, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' );
             
 
 
@@ -677,6 +669,7 @@ class ASI_RPM():
                 if grid[x,y,6] != 0:
                     if State.uniform(low=0.0, high=1.0)>0.5:
                         grid[x,y,3:5]=-1.*grid[x,y,3:5]
+        grid[grid ==0]=0.
         self.lattice = grid
 
     def correlation(self, lattice1, lattice2):
@@ -716,7 +709,6 @@ class ASI_RPM():
     def fieldTemperature(self, Hs, n=3, nangle=36):
         #Hs = (Beta - 9.12)/0.201
         Hc = self.Hc
-        print(Hc)
         Hmax = (1.5*self.Hc+ 4.*self.Hc_std*self.Hc+Hs)
         Happlied = Hmax
         while np.absolute(Happlied) > (Hc-4.*self.Hc_std*self.Hc):
@@ -726,14 +718,139 @@ class ASI_RPM():
                 self.relax(H, n = n)
             Happlied = -np.sign(Happlied)*(np.absolute(Happlied)-Hs)
 
-    def localCorrelation(self):
-        print('working on it')
+    def vertexType(self):
+        '''
+        Only works for square
 
-    def domainSize(self):
+        '''
         grid = copy.deepcopy(self.lattice)
-        
-        #grid[grid[:,:,0] == 0] = np.nan
-        #grid[grid[:,:,6]==0] = np.nan
+        Vertex = np.zeros((self.side_len_x, self.side_len_y, 5))
+        Type1 = np.array([-1,1,1,-1])
+        Type21 = np.array([-1,-1,1,1])
+        Type22 = np.array([1,1,1,1])
+        Type3 = np.array([1,1,1,-1])
+        Type3 = np.array([1,-1,1,1])
+        Type3 = np.array([-1,1,1,1])
+        Type3 = np.array([1,1,-1,1])
+        Type4 = np.array([1,-1,1,-1])
+        for x in np.arange(0, self.side_len_x):
+            for y in np.arange(0, self.side_len_y):
+                Corr_local = []
+                if np.isnan(grid[x,y,8])!=True:
+                    x1 = x - 3
+                    x2 = x + 4
+                    y1 = y - 3
+                    y2 = y + 4
+
+                    if x1<0:
+                        x1 = 0
+                    if x2>self.side_len_x:
+                        x2 = self.side_len_x
+                    if y1<0:
+                        y1 = 0
+                    if y2>self.side_len_y:
+                        y2 = self.side_len_y
+                    local = grid[x1:x2,y1:y2]
+                    spin_code0 = np.array([grid[x+1,y,3],grid[x-1,y,3],grid[x,y+1,4],grid[x,y-1,4]])
+                    Vertex[x,y,0:4] = spin_code0
+                    if np.array_equal(Vertex[x,y,0:4],Type1) or np.array_equal(Vertex[x,y,0:4],-1.*Type1):
+                        Vertex[x,y,4] = 1
+                    elif np.array_equal(Vertex[x,y,0:4],Type4) or np.array_equal(Vertex[x,y,0:4], -1.*Type4):
+                        Vertex[x,y,4] = 4
+                    elif np.array_equal(Vertex[x,y,0:4], Type21) or np.array_equal(Vertex[x,y,0:4], -1.*Type21) or np.array_equal(Vertex[x,y,0:4],Type22) or np.array_equal(Vertex[x,y,0:4],-1.*Type22):
+                        Vertex[x,y,4] = 2
+                    else:
+                        Vertex[x,y,4] = 3
+                else:
+                    Vertex[x,y,:] = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
+        return(Vertex)
+
+    def vertexTypeMap(self):
+        '''
+        Only works with square
+        '''
+        Vertex = self.vertexType()
+        X = self.lattice[:,:,0].flatten()
+        Y = self.lattice[:,:,1].flatten()
+        z = self.lattice[:,:,2].flatten()
+        Mx = self.lattice[:,:,3].flatten()
+        My = self.lattice[:,:,4].flatten()
+        Mz = self.lattice[:,:,5].flatten()
+        Hc = self.lattice[:,:,6].flatten()
+        C = self.lattice[:,:,7].flatten()
+        charge = self.lattice[:,:,8].flatten()
+        Type = Vertex[:,:,4].flatten()
+        fig = plt.figure(figsize=(6,6))
+        ax = fig.add_subplot(111)
+        ax.set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
+        ax.set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
+        graph = ax.scatter(X,Y,c = Vertex[:,:,4], marker = 'o', cmap = cm.plasma, zorder=2)
+        cb2 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax)
+        cb2.locator = MaxNLocator(nbins = 5)
+        cb2.update_ticks()
+        ax.quiver(X,Y,Mx,My,angles='xy', scale_units='xy',  pivot = 'mid')
+        plt.show()
+
+    def vertexTypePercentage(self):
+        '''
+        Only works with square
+        '''
+        Vertex = self.vertexType()
+        Type1 = np.nansum(Vertex[:,:,4]==1.)
+        Type2 = np.nansum(Vertex[:,:,4]==2.)
+        Type3 = np.nansum(Vertex[:,:,4]==3.)
+        Type4 = np.nansum(Vertex[:,:,4]==4.)
+        total = np.sum([Type1, Type2, Type3, Type4])
+        print(total, Type1,Type2,Type3,Type4)
+        vertices = {'Type1': Type1/total,'Type2': Type2/total,'Type3': Type3/total,'Type4': Type4/total}
+        print(vertices)
+        return(vertices)
+
+    def localCorrelation(self):
+        '''
+        Only works for square Lattice
+        '''
+        grid = copy.deepcopy(self.lattice)
+        Correlation = np.zeros((self.side_len_x, self.side_len_y, 1))
+        for x in np.arange(0, self.side_len_x):
+            for y in np.arange(0, self.side_len_y):
+                Corr_local = []
+                if np.isnan(grid[x,y,8])!=True:
+                    x1 = x - 3
+                    x2 = x + 4
+                    y1 = y - 3
+                    y2 = y + 4
+
+                    if x1<0:
+                        x1 = 0
+                    if x2>self.side_len_x:
+                        x2 = self.side_len_x
+                    if y1<0:
+                        y1 = 0
+                    if y2>self.side_len_y:
+                        y2 = self.side_len_y
+                    local = grid[x1:x2,y1:y2]
+                    spin_code0 = np.array([grid[x+1,y,3],grid[x-1,y,3],grid[x,y+1,4],grid[x,y-1,4]])
+
+                    #print(np.sum(np.multiply(local[:,:, 3:6]), np.array([[1,0],[0,-1]])))
+                    #print(local)
+                    for i in np.arange(x1,x2):
+                        for j in np.arange(y1,y2):
+                            if np.isnan(grid[i,j,8])!=True:
+                                spin_code = np.array([grid[i+1,j,3],grid[i-1,j,3],grid[i,j+1,4],grid[i,j-1,4]])
+                                Corr_local.append(np.sum(np.equal(spin_code,spin_code0))/np.size(spin_code))
+                    Corr = (np.sum(np.array(Corr_local))-1.)/(np.size(Corr_local)-1.)
+                    Correlation[x,y,0] = Corr
+                else:
+                    Correlation[x,y,0] = np.nan
+
+                    
+                    #local = grid[x-1:x+3,y-1:y+3,:]
+                    #plt.quiver(grid[:,:,0].flatten(), grid[:,:,1].flatten(),grid[:,:,3].flatten(),grid[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
+                    #plt.scatter(grid[:,:,0].flatten(), grid[:,:,0].flatten(), c = grid[:,:,8].flatten())
+                    #plt.plot(grid[x,y,0],grid[x,y,1], 'o')
+                    #plt.quiver(local[:,:,0].flatten(), local[:,:,1].flatten(),local[:,:,3].flatten(),local[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
+                    #plt.show()
         X = grid[:,:,0].flatten()
         Y = grid[:,:,1].flatten()
         z = grid[:,:,2].flatten()
@@ -747,17 +864,13 @@ class ASI_RPM():
         ax = fig.add_subplot(111)
         ax.set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
         ax.set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
-        ax.set_title("Vertex Magnetic Charge Map",fontsize=14)
-        # scatter with colormap mapping to z value
-        ax.scatter(X,Y,s=80,c=Mx, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' );
-        fig = plt.figure(figsize=(6,6))
-        ax = fig.add_subplot(111)
-        ax.set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
-        ax.set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
-        ax.set_title("Vertex Magnetic Charge Map",fontsize=14)
-        # scatter with colormap mapping to z value
-        ax.scatter(X,Y,s=80,c=My, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' )
+        graph = ax.scatter(X,Y,c = Correlation[:,:,0], marker = 'o', cmap = cm.plasma, zorder=2)
+        cb2 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax)
+        cb2.locator = MaxNLocator(nbins = 5)
+        cb2.update_ticks()
+        ax.quiver(X,Y,Mx,My,angles='xy', scale_units='xy',  pivot = 'mid')
         plt.show()
+        return(Correlation)
 
     def returnLattice(self):
         return(self.lattice)
