@@ -5,7 +5,7 @@ import matplotlib.cm as cm
 import matplotlib.colors as cl
 from matplotlib.ticker import MaxNLocator
 import copy
-import rpmClassDev_Alex as rpm
+import rpmClass_Stable as rpm
 
 Hc = 0.062
 bar_length = 220e-9
@@ -33,10 +33,10 @@ Hc_std = 0.05
 
 
 squareLattice.square(Hc_mean=Hc, Hc_std=Hc_std)
-squareLattice.save('SaturatedLattice_10x10_3.npz')
+squareLattice.save('SaturatedLattice_5x5_3')
 squareLattice.graph()
 squareLattice.randomMag()
-squareLattice.save('RandomLattice_10x10_3.npz')
+squareLattice.save('RandomLattice_5x5_3')
 squareLattice.graph()
 plt.show()
 #squareLattice.save('RandomLattice1')

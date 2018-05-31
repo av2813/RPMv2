@@ -1,0 +1,57 @@
+## interpreter directive - this is a shell script
+#!/bin/sh
+#
+## ask PBS for time (format hh:mm:ss)
+#PBS -l walltime=24:00:00
+#
+## ask for one node with 1 cpus and total 2gb memory (per node)
+#PBS -l select=1:ncpus=8:mem=8GB
+## the number of subjobs in queue
+#PBS -J 1-1000
+## Ask to join GPU queue
+#
+#
+#
+## ask PBS to email upon job termination
+#PBS -e abe
+#PBS -M av2813@ic.ac.uk
+#
+#
+##load application module
+module load 
+#
+echo BeforePythonCode
+
+#
+##file management - Copy input file to TMPDIR
+cp $HOME/Mumax/RPM/MinorLoop5x5/MinorLoop5x5.$PBS_ARRAY_INDEX.py $TMPDIR
+cp $HOME/Mumax/RPM/MinorLoop5x5/rpmClass_Stable.py $TMPDIR
+cp $HOME/Mumax/RPM/MinorLoop5x5/Lattice1_Saturated5x5.npz $TMPDIR
+cp $HOME/Mumax/RPM/MinorLoop5x5/Lattice1_Random5x5.npz $TMPDIR
+cp $HOME/Mumax/RPM/MinorLoop5x5/Lattice2_Saturated5x5.npz $TMPDIR
+cp $HOME/Mumax/RPM/MinorLoop5x5/Lattice2_Random5x5.npz $TMPDIR
+cp $HOME/Mumax/RPM/MinorLoop5x5/Lattice3_Saturated5x5.npz $TMPDIR
+cp $HOME/Mumax/RPM/MinorLoop5x5/Lattice3_Random5x5.npz $TMPDIR
+ls
+echo
+#
+##command line
+python MinorLoop5x5.$PBS_ARRAY_INDEX.mx3
+echo Postprocessing
+
+python PlotMinorLoops.py
+python ReadLattices.py
+#
+##file management - Move output files to WORK directory
+ls
+rm log.txt
+rm gui
+cp -a * $WORK/RPM/MinorLoop5x5/$PBS_ARRAY_INDEX
+ls $WORK/GroundSemiCircle/$WORK/RPM/MinorLoop5x5/$PBS_ARRAY_INDEX
+## Diagnostics
+#
+echo ------------------------------------------------------------------------------------------------------------------
+ls -la /tmp/
+nvidia-smi
+pbsnodes -a
+#

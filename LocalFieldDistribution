@@ -1,0 +1,56 @@
+
+import numpy as np
+
+
+def dipole(self, m, r, r0):
+	"""Calculate a field in point r created by a dipole moment m located in r0.
+	Spatial components are the outermost axis of r and returned B.
+	"""
+	m = np.array(m)
+	r = np.array(r)
+	r0 = np.array(r0)
+	m = self.magnetisation*self.bar_length*self.bar_width*self.bar_thickness*m
+	#print(r,r0)
+	#r = (self.vertex_gap+self.bar_length/2)*r
+	#r0 = (self.vertex_gap+self.bar_length/2)*r0
+	# we use np.subtract to allow r and r0 to be a python lists, not only np.array
+	R = np.subtract(np.transpose(r), r0).T
+	# assume that the spatial components of r are the outermost axis
+	norm_R = np.sqrt(np.einsum("i...,i...", R, R))
+	# calculate the dot product only for the outermost axis,
+	# that is the spatial components
+	m_dot_R = np.tensordot(m, R, axes=1)
+	# tensordot with axes=0 does a general outer product - we want no sum
+	B = 3 * m_dot_R * R / norm_R**5 - np.tensordot(m, 1 / norm_R**3, axes=0)
+	# include the physical constant
+	B *= 1e-7
+	return(B)
+
+def Hlocal2(self, x,y,n =1):
+    Hl = []
+    x1 = x - n
+    x2 = x + n
+    y1 = y - n
+    y2 = y + n
+
+    if x1<0:
+        x1 = 0
+    if x2>self.side_len_x:
+        x2 = self.side_len_x -1
+    if y1<0:
+        y1 = 0
+    if y2>self.side_len_y-1:
+        y2 = self.side_len_y-1
+
+    grid = self.lattice[x1:x2+1,y1:y2+1,:]
+    m = grid[:,:,3:6]
+    m = m.reshape(-1, m.shape[-1])
+    r = grid[:,:,0:3]
+    r = r.reshape(-1, r.shape[-1])
+    r0 = self.lattice[x,y,0:3]
+
+    for pos, mag in zip(r, m):
+        if np.linalg.norm(pos-r0)/(n+1)<=1.0 and np.array_equal(pos, r0)!=True:
+            Hl.append(self.dipole(mag, r0, pos))
+    return(sum(Hl))
+

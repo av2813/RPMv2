@@ -1,45 +1,83 @@
-import rpmClassDev_Alex as rpm
+import rpmClass_Stable as rpm
 import os
 import importlib
 import matplotlib.pyplot as plt
 import numpy as np
 from functools import reduce
+import time
 
 importlib.reload(rpm)		#make sure that the class is updated with any chanes
 
 #parameters
 Hc = 0.062
-Hc_std = 0.05
-bar_length = 220e-9
-vertex_gap = 1e-8
-bar_thickness = 25e-9
-bar_width = 80e-9
-magnetisation = 800e3
+Hc_std = 0
+bar_length = 1#220e-9
+vertex_gap = 1#100e-9
+bar_thickness = 1#25e-9
+bar_width = 1#80e-9
+magnetisation = 1#800e3
 
 #Graphing and save/load test
-kagomeLattice = rpm.ASI_RPM(5, 5)
-kagomeLattice1 = rpm.ASI_RPM(100, 100)
+kagomeLattice1 = rpm.ASI_RPM(30,30,bar_length = 1, vertex_gap = 1, bar_thickness = 1, \
+        bar_width = 1, magnetisation = 1)
 kagomeLattice1.square()
+kagomeLattice1.randomMag()
+#kagomeLattice1.localPlot(11,20,1)
+kagomeLattice1.latticeFieldHistogram(5)
+
+#kagomeLattice1.square(Hc = Hc, Hc_std=Hc_std)
+#folder = r'C:\Users\av2813\Box\Simulations\Mumax3\mumax3.9final_windows\HPCResults\GroundSemiCircle\pkl'
+'''
+mag =[]
+monopole=[]
+q = []
+field_steps = np.linspace(0,Hmax,steps+1)
+field_steps = np.append(field_steps, np.linspace(Hmax,-Hmax,2*steps+1))
+field_steps = np.append(field_steps, np.linspace(-Hmax,0,steps+1))
+fieldloops = field_steps*np.array([np.cos(Htheta),np.sin(Htheta), 0.])
+for root, dirs, files in os.walk(folder):
+	for file in files:
+		if '.npz' in file and 'AppliedFieldState' in file:
+			squareLattice.load(os.path.join(root,file))
+			mag.append(rpm.netMagnetisation())
+			monopole.append(rpm.monopoleDensity())
+			q.append(rpm.correlation(self.previous,self))
+			#vertex.append(rpm.vertexTypePercentage())
+np.savez('MinorloopQuenchedDisorder'+str(np.around(Hamp*1000,4)).replace('.', 'p')+'mT', fieldloops, q, mag, monopole)
+'''
+
+#kagomeLattice1.updateFolder(r'C:\Users\av2813\Box\GitHub\RPM\AlexData\MinorLoopSquareLattice25x25_QuenchedDisorder0p05\MinorLoopsData\MinorLoopHamp_58p9mT', 'square', 0.062, 0.05)
 #kagomeLattice1.graph()
 #kagomeLattice.kagome2()
 #filename = 'KagomeTest.npy'
 #kagomeLattice.save(os.path.join(os.getcwd(),filename))
-kagomeLattice1.randomMag()
-kagomeLattice1.randomMag()
-kagomeLattice1.randomMag()
-kagomeLattice1.randomMag()
+#file = 'Lattice_Loop3_FieldStrength-83p3mT_Angle0p79.npz'
+#kagomeLattice.load(file)
+#kagomeLattice1.randomMag()
 
+#kagomeLattice1.fieldSweep(0.95*Hc/np.cos(45*np.pi/180), 1, 45, n=4, loops = 4)
+#kagomeLattice1.fieldPlot()
+#kagomeLattice1.vertexEnergy()
+#kagomeLattice1.correlationHistogram()
+#kagomeLattice1.vertexHistogram()
 
-#kagomeLattice1.fieldSweep(0.95*Hc/np.cos(45*np.pi/180), 1, 45, )
+start1 = time.time()
 kagomeLattice1.vertexTypePercentage()
+end1 = time.time()
 kagomeLattice1.vertexTypeMap()
+kagomeLattice1.vertexHistogram()
+kagomeLattice1.correlationHistogram()
+#kagomeLattice1.localCorrelation()
 
 #kagomeLattice.load(os.path.join(os.getcwd(),filename))
 #kagomeLattice.graph()
 #kagomeLattice.fieldplot()
 
-
+start2 = time.time()
 kagomeLattice1.vertexCharge2()
+end2 = time.time()
+
+print(end1-start1, end2-start2)
 #kagomeLattice1.graphCharge()
 print(kagomeLattice1.monopoleDensity())
 #plt.show()

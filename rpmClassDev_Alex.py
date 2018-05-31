@@ -62,8 +62,55 @@ class ASI_RPM():
         self.Hc = np.float(parameters[10])
         self.Hc_std = np.float(parameters[11])
         self.lattice = npzfile['arr_0']
-        
-    def square(self, Hc_mean = 0.03, Hc_std = 0.05):
+
+    def update(self, file, lattice_type, Hc, Hc_std):
+        '''
+        Still have some bugs to work out.
+        Don't use this on any important data!!
+        '''
+        npzfile = np.load(file)
+        parameters = npzfile['arr_1']
+        print(parameters)
+        print(len(parameters))
+        if len(parameters)!=12:
+            self.unit_cells_x = np.int(parameters[0])
+            self.unit_cells_y = np.int(parameters[1])
+            self.bar_length = np.float(parameters[2])
+            self.vertex_gap = np.float(parameters[3])
+            self.bar_width = np.float(parameters[4])
+            self.bar_thickness = np.float(parameters[5])
+            self.magnetisation = np.float(parameters[6])
+            #self.side_len_x = np.int(parameters[7])
+            #self.side_len_y = np.int(parameters[8])
+            #self.lattice = npzfile['arr_0']
+            grid1 = copy.deepcopy(npzfile['arr_0'])
+            self.side_len_x = 2*self.unit_cells_x+1
+            self.side_len_y = 2*self.unit_cells_y+1
+            self.square()
+            grid2 = copy.deepcopy(self.lattice)
+            print(np.shape(grid1), np.shape(grid2))
+            if lattice_type == 'square':
+                grid3 = np.zeros((self.side_len_x,self.side_len_x,9))
+                grid3[:,:,0:8] = copy.deepcopy(grid1[:,:,0:8])
+                grid3[:,:,8] = copy.deepcopy(grid2[:,:,8])
+            self.lattice = copy.deepcopy(grid3)
+            self.type = lattice_type
+            self.Hc = Hc
+            self.Hc_std = Hc_std
+            print(file.replace('.npz',''))
+            self.save(file.replace('.npz','_new'))
+        else:
+            print('done')
+            self.load(file)
+
+
+    def updateFolder(self, folder,lattice_type, Hc, Hc_std):
+        for root, dirs, files in os.walk(folder):
+            for file in files:
+                if file[-4:] == '.npz':
+                    self.update(os.path.join(root,file), lattice_type, Hc, Hc_std)
+
+    def square(self, Hc_mean = 0.062, Hc_std = 0.05):
         '''
         Defines the lattice positions, magnetisation directions and coercive fields of an array of 
         square ASI
@@ -451,6 +498,8 @@ class ASI_RPM():
                     self.save('Lattice_'+str(counter)+'Loop'+str(i)+'_FieldStrength'+str(np.round(j*1000,2))+'mT_Angle'+str(np.round(Htheta, 2)), folder = folder)
                 counter+=1
             self.localCorrelation()
+            #self.vertexHistogram()
+            #self.correlationHistogram()
         return(np.array(fieldloops),np.array(q), np.array(mag), np.array(monopole))
     
     #for Hx, Hy in np.meshgrid(Hx_list, Hy_list, sparse = True):
@@ -502,22 +551,31 @@ class ASI_RPM():
                 field[x,y,:] = self.Hlocal2(x, y, n=n)
         X = grid[:,:,0].flatten()
         Y = grid[:,:,1].flatten()
+        Mx = grid[:,:,3].flatten()
+        My = grid[:,:,4].flatten()
         Hx = field[:,:, 0].flatten()
         Hy = field[:,:, 1].flatten()
         Hz = field[:,:, 2].flatten()
         fig, ax =plt.subplots(ncols = 2,sharex=True, sharey=True)
         plt.set_cmap(cm.plasma)
-        graph = ax[0].quiver(X, Y, Hx, Hy, angles='xy', scale_units='xy',  pivot = 'mid')
+        graph = ax[0].quiver(X, Y, Hx, Hy,(Hx**2+Hy**2)**0.5, angles='xy', scale_units='xy',  pivot = 'mid')
+        cb1 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax[0])
+        cb1.locator = MaxNLocator(nbins = 8)
+        cb1.update_ticks()
         #qk = ax[0].quiverkey(graph, 0.45, 0.9, 10, r'$mT$', labelpos='E',
         #           coordinates='figure')
         ax[0].set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
         ax[0].set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
         ax[0].set_title('In Plane Field')
         #fig.colorbar(graph, ax = ax[0],boundaries = np.linspace(np.min(Hc[np.nonzero(Hc)]), max(Hc),1000))
-        graph = ax[1].scatter(X, Y, Hz, marker='o', )
+        graph = ax[1].scatter(X, Y,c = (Hx**2+Hy**2)**0.5, marker='o')
+        ax[1].quiver(X,Y,Mx, My, angles='xy', scale_units='xy',  pivot = 'mid')
         ax[1].set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
         ax[1].set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
-        ax[1].set_title('Out of Plane Field')
+        ax[1].set_title('Field Magnitude')
+        cb2 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax[1])
+        cb2.locator = MaxNLocator(nbins = 8)
+        cb2.update_ticks()
         for axes in ax:
             axes.plot([1, 2, 3], [1, 2, 3])
             axes.set(adjustable='box-forced', aspect='equal')
@@ -626,7 +684,8 @@ class ASI_RPM():
         #ax.grid(True,linestyle='-',color='0.75')
         ax.quiver(X, Y, Mx, My, angles='xy', scale_units='xy',  pivot = 'mid', zorder=1)
         # scatter with colormap mapping to z value
-        ax.scatter(X,Y,s=80,c=MagCharge, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' );
+        ax.scatter(X,Y,s=80,c=MagCharge, marker = 'o', cmap = cm.seismic, zorder=2, edgecolor='k' )
+        plt.show()
             
 
 
@@ -705,6 +764,15 @@ class ASI_RPM():
         grid = self.lattice
         #magcharge = grid[:,:,8].flatten()
         return(np.nanmean(np.absolute(grid[:,:,8])))
+
+    def vertexEnergy(self):
+        EnergyVertex = self.vertexType()
+        EnergyVertex[EnergyVertex[:,:,4]==1] = 0.
+        EnergyVertex[EnergyVertex[:,:,4]==2] = (2**0.5-1)/(2**0.5-0.5)
+        EnergyVertex[EnergyVertex[:,:,4]==3] = 1.
+        EnergyVertex[EnergyVertex[:,:,4]==4] = (4*2**0.5)/(2*2**0.5-1)
+        print(np.nanmean(EnergyVertex))
+        return(np.nanmean(EnergyVertex))
     
     def fieldTemperature(self, Hs, n=3, nangle=36):
         #Hs = (Beta - 9.12)/0.201
@@ -721,7 +789,7 @@ class ASI_RPM():
     def vertexType(self):
         '''
         Only works for square
-
+        Classifies the vertices into Type 1,2,3,4
         '''
         grid = copy.deepcopy(self.lattice)
         Vertex = np.zeros((self.side_len_x, self.side_len_y, 5))
@@ -755,6 +823,7 @@ class ASI_RPM():
                     Vertex[x,y,0:4] = spin_code0
                     if np.array_equal(Vertex[x,y,0:4],Type1) or np.array_equal(Vertex[x,y,0:4],-1.*Type1):
                         Vertex[x,y,4] = 1
+
                     elif np.array_equal(Vertex[x,y,0:4],Type4) or np.array_equal(Vertex[x,y,0:4], -1.*Type4):
                         Vertex[x,y,4] = 4
                     elif np.array_equal(Vertex[x,y,0:4], Type21) or np.array_equal(Vertex[x,y,0:4], -1.*Type21) or np.array_equal(Vertex[x,y,0:4],Type22) or np.array_equal(Vertex[x,y,0:4],-1.*Type22):
@@ -769,7 +838,7 @@ class ASI_RPM():
         '''
         Only works with square
         '''
-        Vertex = self.vertexType()
+        Vertex= self.vertexType()
         X = self.lattice[:,:,0].flatten()
         Y = self.lattice[:,:,1].flatten()
         z = self.lattice[:,:,2].flatten()
@@ -795,7 +864,7 @@ class ASI_RPM():
         '''
         Only works with square
         '''
-        Vertex = self.vertexType()
+        Vertex= self.vertexType()
         Type1 = np.nansum(Vertex[:,:,4]==1.)
         Type2 = np.nansum(Vertex[:,:,4]==2.)
         Type3 = np.nansum(Vertex[:,:,4]==3.)
@@ -843,8 +912,6 @@ class ASI_RPM():
                     Correlation[x,y,0] = Corr
                 else:
                     Correlation[x,y,0] = np.nan
-
-                    
                     #local = grid[x-1:x+3,y-1:y+3,:]
                     #plt.quiver(grid[:,:,0].flatten(), grid[:,:,1].flatten(),grid[:,:,3].flatten(),grid[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
                     #plt.scatter(grid[:,:,0].flatten(), grid[:,:,0].flatten(), c = grid[:,:,8].flatten())
@@ -871,6 +938,22 @@ class ASI_RPM():
         ax.quiver(X,Y,Mx,My,angles='xy', scale_units='xy',  pivot = 'mid')
         plt.show()
         return(Correlation)
+
+    def correlationHistogram(self):
+        Correlation = self.localCorrelation()
+        Corr = Correlation[:,:,0].flatten()
+        Corr = Corr[np.logical_not(np.isnan(Corr))]
+        fig, axs = plt.subplots(1, 1, figsize=(5, 15),tight_layout=True)
+        axs.hist(Corr, bins = 10, density = True, facecolor = 'g', alpha = 0.75)
+        plt.show()
+
+    def vertexHistogram(self):
+        Vertex = self.vertexType()
+        Type = Vertex[:,:,4].flatten()
+        Type = Type[np.logical_not(np.isnan(Type))]
+        fig, axs = plt.subplots(1, 1, figsize=(5, 15),tight_layout=True)
+        axs.hist(Type, bins = 4, density = True, facecolor = 'g', alpha = 0.75)
+        plt.show()
 
     def returnLattice(self):
         return(self.lattice)

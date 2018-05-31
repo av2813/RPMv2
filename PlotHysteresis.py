@@ -1,4 +1,7 @@
-
+squareLattice.square(Hc_mean=Hc, Hc_std=Hc_std)
+squareLattice.save('Lattice1_Saturated')
+squareLattice.randomMag()
+squareLattice.save('Lattice1_Random')
 import numpy as np
 import matplotlib.pyplot as plt
 import rpmClassDev_Alex as rpm

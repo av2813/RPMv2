@@ -49,11 +49,11 @@ class ASI_RPM():
         parameters = npzfile['arr_1']
         self.unit_cells_x = np.int(parameters[0])
         self.unit_cells_y = np.int(parameters[1])
-        self.bar_length = parameters[2]
-        self.vertex_gap = parameters[3]
-        self.bar_width = parameters[4]
-        self.bar_thickness = parameters[5]
-        self.magnetisation = parameters[6]
+        self.bar_length = np.float(parameters[2])
+        self.vertex_gap = np.float(parameters[3])
+        self.bar_width = np.float(parameters[4])
+        self.bar_thickness = np.float(parameters[5])
+        self.magnetisation = np.float(parameters[6])
         self.side_len_x = np.int(parameters[7])
         self.side_len_y = np.int(parameters[8])
         self.type = parameters[9]
@@ -103,7 +103,7 @@ class ASI_RPM():
                     else:
                         grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,1.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                 else:
-                    if x%2 ==0:
+                    if x%2 ==0 and x!=0 and y!=0 and x!=self.side_len_x-1 and y!=self.side_len_x-1:
                         grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,0])
                     else:
                         grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
@@ -189,60 +189,60 @@ class ASI_RPM():
         self.lattice = grid
 
 
-        def long_shakti(self, Hc_mean = 0.062, Hc_std = 0.05):
-            self.type = 'long_shakti'
-            self.side_len_x = 4*self.unit_cells_x+1
-            self.side_len_y = 4*self.unit_cells_y+1
-            grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
-            for x in range(0, self.side_len_x):
-                for y in range(0, self.side_len_y):
-                    if (x+y)%2 != 0:
-                        if y%2 == 0:
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
-                        else:
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,1.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+    def long_shakti(self, Hc_mean = 0.062, Hc_std = 0.05):
+        self.type = 'long_shakti'
+        self.side_len_x = 4*self.unit_cells_x+1
+        self.side_len_y = 4*self.unit_cells_y+1
+        grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if (x+y)%2 != 0:
+                    if y%2 == 0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,1.,0.,0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
                     else:
-                        if x%2 ==0:     #and y%(self.side_len_y-1)!=0 and x%(self.side_len_x-1)!=0
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,0])
-                        else:
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
-            for x in range(0, self.side_len_x):
-                for y in range(0, self.side_len_y):
-                    if (y-2)%8==0:
-                        if (x-1)%8==0 or (x-3)%8==0:
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
-                    if (y-6)%8==0:
-                        if (x-5)%8==0 or (x-7)%8==0:
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
-                    if (x-2)%8==0:
-                        if (y-5)%8==0 or (y-7)%8==0:
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,1.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                else:
+                    if x%2 ==0:     #and y%(self.side_len_y-1)!=0 and x%(self.side_len_x-1)!=0
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,0])
+                    else:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if (y-2)%8==0:
+                    if (x-1)%8==0 or (x-3)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if (y-6)%8==0:
+                    if (x-5)%8==0 or (x-7)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if (x-2)%8==0:
+                    if (y-5)%8==0 or (y-7)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                if (x-6)%8==0:
+                    if (y-1)%8==0 or (y-3)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if (y-2)%8==0:
+                    if (x-5)%8==0 or (x-7)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
                     if (x-6)%8==0:
-                        if (y-1)%8==0 or (y-3)%8==0:
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
-            for x in range(0, self.side_len_x):
-                for y in range(0, self.side_len_y):
-                    if (y-2)%8==0:
-                        if (x-5)%8==0 or (x-7)%8==0:
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
-                        if (x-6)%8==0:
-                            grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,2.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
-                    if (y-6)%8==0:
-                        if (x-1)%8==0 or (x-3)%8==0:
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
-                        if (x-2)%8==0:
-                            grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,2.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,2.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                if (y-6)%8==0:
+                    if (x-1)%8==0 or (x-3)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
                     if (x-2)%8==0:
-                        if (y-1)%8==0 or (y-3)%8==0:
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
-                        if (y-2)%8==0:
-                            grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,0.,2.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
-                    if (x-6)%8==0:
-                        if (y-5)%8==0 or (y-7)%8==0:
-                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
-                        if (y-6)%8==0:
-                            grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,0.,2.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
-            self.lattice = grid
+                        grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,2.,0.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                if (x-2)%8==0:
+                    if (y-1)%8==0 or (y-3)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                    if (y-2)%8==0:
+                        grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,0.,2.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                if (x-6)%8==0:
+                    if (y-5)%8==0 or (y-7)%8==0:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+                    if (y-6)%8==0:
+                        grid[x,y] = np.array([(x)*self.unit_cell_len,y*self.unit_cell_len,0.,0.,2.,0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+        self.lattice = grid
 
     def tetris(self, Hc_mean = 0.03, Hc_std = 0.05):
         #Working on it
@@ -431,7 +431,7 @@ class ASI_RPM():
             self.lattice = grid
     
     
-    def fieldsweep(self, Hmax, steps, Htheta, n=10, loops=1, folder = None):
+    def fieldSweep(self, Hmax, steps, Htheta, n=10, loops=1, folder = None):
         '''
         Sweeps through field up to a maximum field of Hmax in 
         '''
@@ -441,6 +441,7 @@ class ASI_RPM():
         mag = []
         monopole = []
         fieldloops = []
+        vertex = []
         field_steps = np.linspace(0,Hmax,steps+1)
         field_steps = np.append(field_steps, np.linspace(Hmax,-Hmax,2*steps+1))
         field_steps = np.append(field_steps, np.linspace(-Hmax,0,steps+1))
@@ -455,6 +456,7 @@ class ASI_RPM():
                 mag.append(self.netMagnetisation())
                 monopole.append(self.monopoleDensity())
                 q.append(self.correlation(self.previous,self))
+                vertex.append(self.vertexTypePercentage())
                 if folder ==None:
                     self.save('Lattice_'+'Loop'+str(i)+'_FieldStrength'+str(np.round(j*1000,2))+'mT_Angle'+str(np.round(Htheta, 2)))
                 else:
@@ -462,7 +464,7 @@ class ASI_RPM():
                         os.makedirs(folder)
                     self.save('Lattice_'+str(counter)+'Loop'+str(i)+'_FieldStrength'+str(np.round(j*1000,2))+'mT_Angle'+str(np.round(Htheta, 2)), folder = folder)
                 counter+=1
-        return(np.array(fieldloops),np.array(q), np.array(mag), np.array(monopole))
+        return(np.array(fieldloops),np.array(q), np.array(mag), np.array(monopole), np.array(vertex))
     
     #for Hx, Hy in np.meshgrid(Hx_list, Hy_list, sparse = True):
     #np.meshgrid(Hx_list, Hy_list, sparse = True):
@@ -690,6 +692,82 @@ class ASI_RPM():
                 Hl.append(self.dipole(mag, r0, pos))
         return(sum(Hl))
 
+    def localPlot(self,x,y,n):
+        x1 = x - n
+        x2 = x + n+1
+        y1 = y - n
+        y2 = y + n+1
+        
+        if x1<0:
+            x1 = 0
+        if x2>self.side_len_x:
+            x2 = self.side_len_x -1
+        if y1<0:
+            y1 = 0
+        if y2>self.side_len_y-1:
+            y2 = self.side_len_y-1
+
+        local = self.lattice[x1:x2,y1:y2,:]
+        grid = self.lattice
+        plt.quiver(grid[:,:,0].flatten(), grid[:,:,1].flatten(),grid[:,:,3].flatten(),grid[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
+        plt.scatter(grid[:,:,0].flatten(), grid[:,:,1].flatten(), c = grid[:,:,8].flatten())
+        plt.plot(grid[x,y,0],grid[x,y,1], 'o')
+        plt.quiver(local[:,:,0].flatten(), local[:,:,1].flatten(),local[:,:,3].flatten(),local[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
+        plt.show()
+
+    def localFieldHistogram(self, x, y, n, total):
+        field = []
+        for c in np.arange(0,total):
+            self.randomMag()
+            test = self.Hlocal2(x,y,n=n)
+            unit_vector = self.lattice[x,y,3:6]
+            field.append(np.dot(np.array(test), unit_vector))
+        print(field)
+        fig, ax1 = plt.subplots(1, 1)
+        ax1.hist(field, normed=True, bins=np.linspace(min(field)*1.1,max(field)*1.1, num=101), alpha=1.)
+        ax1.set_ylabel('Count')
+        ax1.set_xlabel('Field Strength along axis (T)')
+        ax1.set_title('Dipolar Field - n='+str(n)+' nearest neighbours')
+        plt.show()
+
+    def latticeFieldHistogram(self, n):
+        field = []
+        field = []
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if abs(self.lattice[x,y,6]) != 0:
+                    test = self.Hlocal2(x,y,n=n)
+                    unit_vector = self.lattice[x,y,3:6]
+                    field.append(np.dot(np.array(test), unit_vector))
+        print(field)
+        fig, ax1 = plt.subplots(1, 1)
+        ax1.hist(field, normed=True, bins=np.linspace(min(field),max(field), num=101), alpha=1.)
+        ax1.set_ylabel('Count')
+        ax1.set_xlabel('Field Strength along axis (T)')
+        ax1.set_title('Dipolar Field - n='+str(n)+' nearest neighbours')
+        plt.show()
+
+    def vertexHistogram(self):
+        Vertex = self.vertexType()
+        Type = Vertex[:,:,4].flatten()
+        Type = Type[np.logical_not(np.isnan(Type))]
+        fig, ax1 = plt.subplots(1, 1)
+        ax1.hist(Type, normed=True, bins=np.linspace(0,5, num=6), alpha=1.)
+        ax1.set_ylabel('Count')
+        ax1.set_xlabel('Vertex Type')
+        ax1.set_title('Vertex Type Distribuion')
+        plt.show()
+
+    def correlationHistogram(self):
+        Correlation = self.localCorrelation()
+        Corr = Correlation[:,:,0].flatten()
+        Corr = Corr[np.logical_not(np.isnan(Corr))]
+        fig, ax1 = plt.subplots(1, 1)
+        ax1.hist(Corr, normed=True, bins=np.linspace(0,1, num=21), alpha=1.)
+        ax1.set_ylabel('Count')
+        ax1.set_xlabel('Correlation')
+        ax1.set_title('Local Correlation Distribuion')
+        plt.show()
 
 
     def randomMag(self, seed = None):
@@ -758,7 +836,7 @@ class ASI_RPM():
     def vertexType(self):
         '''
         Only works for square
-
+        Classifies the vertices into Type 1,2,3,4
         '''
         grid = copy.deepcopy(self.lattice)
         Vertex = np.zeros((self.side_len_x, self.side_len_y, 5))
@@ -792,6 +870,7 @@ class ASI_RPM():
                     Vertex[x,y,0:4] = spin_code0
                     if np.array_equal(Vertex[x,y,0:4],Type1) or np.array_equal(Vertex[x,y,0:4],-1.*Type1):
                         Vertex[x,y,4] = 1
+
                     elif np.array_equal(Vertex[x,y,0:4],Type4) or np.array_equal(Vertex[x,y,0:4], -1.*Type4):
                         Vertex[x,y,4] = 4
                     elif np.array_equal(Vertex[x,y,0:4], Type21) or np.array_equal(Vertex[x,y,0:4], -1.*Type21) or np.array_equal(Vertex[x,y,0:4],Type22) or np.array_equal(Vertex[x,y,0:4],-1.*Type22):
@@ -832,7 +911,7 @@ class ASI_RPM():
         '''
         Only works with square
         '''
-        Vertex = self.vertexType()
+        Vertex= self.vertexType()
         Type1 = np.nansum(Vertex[:,:,4]==1.)
         Type2 = np.nansum(Vertex[:,:,4]==2.)
         Type3 = np.nansum(Vertex[:,:,4]==3.)
@@ -908,6 +987,17 @@ class ASI_RPM():
         ax.quiver(X,Y,Mx,My,angles='xy', scale_units='xy',  pivot = 'mid')
         plt.show()
         return(Correlation)
+
+
+    def searchRPM_monte(self, n):
+        for x in np.arange(0,n):
+            self.randomMag()
+            self.fieldSweep()
+
+    def searchRPM_single(self, n):
+        for x in np.arange(0,n):
+            self.fieldSweep()
+            
 
 
     def returnLattice(self):
