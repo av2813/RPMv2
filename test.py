@@ -22,8 +22,8 @@ kagomeLattice1 = rpm.ASI_RPM(30,30,bar_length = bar_length, vertex_gap = vertex_
         bar_width = bar_width, magnetisation = magnetisation)
 kagomeLattice1.square()
 kagomeLattice1.randomMag()
-#kagomeLattice1.localPlot(31,30,1)
-for bar_length in np.array([400,600,1000])*1e-9:
+kagomeLattice1.localPlot(31,30,1)
+for bar_length in np.array([600,1000])*1e-9:
 	for width in np.array([80, 140])*1e-9:
 		for gaps in np.array([100, 200])*1e-9:
 			kagomeLattice1 = rpm.ASI_RPM(30,30,bar_length = bar_length, vertex_gap = gaps, bar_thickness = bar_thickness, \
