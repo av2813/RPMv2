@@ -7,6 +7,7 @@ from matplotlib.ticker import MaxNLocator
 #from matplotlib.colors import Normalize
 import copy
 import os
+from decimal import Decimal
 
 
 class ASI_RPM():
@@ -494,7 +495,7 @@ class ASI_RPM():
         B *= 1e-7
         return(B)
 
-    def fieldreturn(self, n=5):
+    def fieldReturn(self, n=5):
         grid = self.lattice
         field = np.zeros((self.side_len_x,self.side_len_y,3))
         for x in range(0, self.side_len_x):
@@ -507,7 +508,7 @@ class ASI_RPM():
         Hz = field[:,:, 2].flatten()
         return(X,Y,Hx,Hy,Hz)
     
-    def fieldplot(self, n=5):
+    def fieldPlot(self, n=5):
         grid = self.lattice
         field = np.zeros((self.side_len_x,self.side_len_y,3))
         for x in range(0, self.side_len_x):
@@ -692,6 +693,34 @@ class ASI_RPM():
                 Hl.append(self.dipole(mag, r0, pos))
         return(sum(Hl))
 
+    def Hlocal3(self,x,y,n =1):
+        Hl = []
+        x1 = x - n
+        x2 = x + n+1
+        y1 = y - n
+        y2 = y + n+1
+        if x1<0:
+            x1 = 0
+        if x2>self.side_len_x:
+            x2 = self.side_len_x -1
+        if y1<0:
+            y1 = 0
+        if y2>self.side_len_y-1:
+            y2 = self.side_len_y-1
+
+        local = self.lattice[x1:x2,y1:y2,:]
+        m = local[:,:,3:6]
+        m = m.reshape(-1, m.shape[-1])
+        r = local[:,:,0:3]
+        r = r.reshape(-1, r.shape[-1])
+        r0 = self.lattice[x,y,0:3]
+
+        for pos, mag in zip(r, m):
+            if np.linalg.norm(pos-r0)/(n+1)<=1.0 and np.array_equal(pos, r0)!=True:
+                Hl.append(self.dipole(mag, r0, pos))
+        return(np.sum(np.array(Hl), axis = 0))
+
+
     def localPlot(self,x,y,n):
         x1 = x - n
         x2 = x + n+1
@@ -715,11 +744,11 @@ class ASI_RPM():
         plt.quiver(local[:,:,0].flatten(), local[:,:,1].flatten(),local[:,:,3].flatten(),local[:,:,4].flatten(), angles='xy', scale_units='xy',  pivot = 'mid')
         plt.show()
 
-    def localFieldHistogram(self, x, y, n, total):
+    def localFieldHistogram(self, x, y, n, total, save = False):
         field = []
         for c in np.arange(0,total):
             self.randomMag()
-            test = self.Hlocal2(x,y,n=n)
+            test = self.Hlocal3(x,y,n=n)
             unit_vector = self.lattice[x,y,3:6]
             field.append(np.dot(np.array(test), unit_vector))
         print(field)
@@ -728,7 +757,15 @@ class ASI_RPM():
         ax1.set_ylabel('Count')
         ax1.set_xlabel('Field Strength along axis (T)')
         ax1.set_title('Dipolar Field - n='+str(n)+' nearest neighbours')
-        plt.show()
+        if save == True:
+            folder = os.getcwd()+r'\\'+self.type+r'_localFieldHistogram_length%.2Ewidth%.2Evgap%.2Ethick%.2E\\' \
+            %(self.bar_length, self.bar_width, self.vertex_gap, self.bar_thickness)
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            plt.savefig(folder+r'Histogram_x%.0fy%.0f_n%.0f_total%.0f.png' %(x, y, n, total))
+            plt.savefig(folder+r'Histogram_x%.0fy%.0f_n%.0f_total%.0f.pdf' %(x, y, n, total))
+        else:
+            plt.show()
 
     def latticeFieldHistogram(self, n):
         field = []
@@ -736,7 +773,7 @@ class ASI_RPM():
         for x in range(0, self.side_len_x):
             for y in range(0, self.side_len_y):
                 if abs(self.lattice[x,y,6]) != 0:
-                    test = self.Hlocal2(x,y,n=n)
+                    test = self.Hlocal3(x,y,n=n)
                     unit_vector = self.lattice[x,y,3:6]
                     field.append(np.dot(np.array(test), unit_vector))
         print(field)
@@ -745,7 +782,8 @@ class ASI_RPM():
         ax1.set_ylabel('Count')
         ax1.set_xlabel('Field Strength along axis (T)')
         ax1.set_title('Dipolar Field - n='+str(n)+' nearest neighbours')
-        plt.show()
+        plt.draw()
+        plt.pause(1)
 
     def vertexHistogram(self):
         Vertex = self.vertexType()

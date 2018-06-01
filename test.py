@@ -11,19 +11,28 @@ importlib.reload(rpm)		#make sure that the class is updated with any chanes
 #parameters
 Hc = 0.062
 Hc_std = 0
-bar_length = 1#220e-9
-vertex_gap = 1#100e-9
-bar_thickness = 1#25e-9
-bar_width = 1#80e-9
-magnetisation = 1#800e3
+bar_length = 400e-9
+vertex_gap = 100e-9
+bar_thickness = 15e-9
+bar_width = 80e-9
+magnetisation = 800e3
 
 #Graphing and save/load test
-kagomeLattice1 = rpm.ASI_RPM(30,30,bar_length = 1, vertex_gap = 1, bar_thickness = 1, \
-        bar_width = 1, magnetisation = 1)
+kagomeLattice1 = rpm.ASI_RPM(30,30,bar_length = bar_length, vertex_gap = vertex_gap, bar_thickness = bar_thickness, \
+        bar_width = bar_width, magnetisation = magnetisation)
 kagomeLattice1.square()
 kagomeLattice1.randomMag()
-#kagomeLattice1.localPlot(11,20,1)
-kagomeLattice1.latticeFieldHistogram(5)
+#kagomeLattice1.localPlot(31,30,1)
+for bar_length in np.array([400,600,1000])*1e-9:
+	for width in np.array([80, 140])*1e-9:
+		for gaps in np.array([100, 200])*1e-9:
+			kagomeLattice1 = rpm.ASI_RPM(30,30,bar_length = bar_length, vertex_gap = gaps, bar_thickness = bar_thickness, \
+        bar_width = width, magnetisation = magnetisation)
+			kagomeLattice1.square()
+			for n in np.arange(1, 6):
+				kagomeLattice1.localFieldHistogram(31,30, n, 10000, save = True)
+				
+
 
 #kagomeLattice1.square(Hc = Hc, Hc_std=Hc_std)
 #folder = r'C:\Users\av2813\Box\Simulations\Mumax3\mumax3.9final_windows\HPCResults\GroundSemiCircle\pkl'
@@ -61,37 +70,37 @@ np.savez('MinorloopQuenchedDisorder'+str(np.around(Hamp*1000,4)).replace('.', 'p
 #kagomeLattice1.correlationHistogram()
 #kagomeLattice1.vertexHistogram()
 
-start1 = time.time()
-kagomeLattice1.vertexTypePercentage()
-end1 = time.time()
-kagomeLattice1.vertexTypeMap()
-kagomeLattice1.vertexHistogram()
-kagomeLattice1.correlationHistogram()
-#kagomeLattice1.localCorrelation()
+# start1 = time.time()
+# kagomeLattice1.vertexTypePercentage()
+# end1 = time.time()
+# kagomeLattice1.vertexTypeMap()
+# kagomeLattice1.vertexHistogram()
+# kagomeLattice1.correlationHistogram()
+# #kagomeLattice1.localCorrelation()
 
-#kagomeLattice.load(os.path.join(os.getcwd(),filename))
-#kagomeLattice.graph()
-#kagomeLattice.fieldplot()
+# #kagomeLattice.load(os.path.join(os.getcwd(),filename))
+# #kagomeLattice.graph()
+# #kagomeLattice.fieldplot()
 
-start2 = time.time()
-kagomeLattice1.vertexCharge2()
-end2 = time.time()
+# start2 = time.time()
+# kagomeLattice1.vertexCharge2()
+# end2 = time.time()
 
-print(end1-start1, end2-start2)
-#kagomeLattice1.graphCharge()
-print(kagomeLattice1.monopoleDensity())
-#plt.show()
-'''
-s = rpm.ASI_RPM(5,5)
-s.short_shakti()
-s.graph()
+# print(end1-start1, end2-start2)
+# #kagomeLattice1.graphCharge()
+# print(kagomeLattice1.monopoleDensity())
+# #plt.show()
+# '''
+# s = rpm.ASI_RPM(5,5)
+# s.short_shakti()
+# s.graph()
 
-s = rpm.ASI_RPM(5,5)
-s.long_shakti()
-s.graph()
+# s = rpm.ASI_RPM(5,5)
+# s.long_shakti()
+# s.graph()
 
 
-t = rpm.ASI_RPM(2,2)
-t.tetris()
-t.graph()
-'''
+# t = rpm.ASI_RPM(2,2)
+# t.tetris()
+# t.graph()
+# '''

@@ -116,7 +116,6 @@ def randomMag(lattice,seed = None):
     return(grid)
 
 def localPlot(lattice, x,y,n):
-	print('t')
     x1 = x - n
     x2 = x + n+1
     y1 = y - n
