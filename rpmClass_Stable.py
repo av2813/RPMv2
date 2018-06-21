@@ -110,6 +110,40 @@ class ASI_RPM():
                         grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
         self.lattice = grid
 
+    def tiltedSquare(self,theta, Hc_mean = 0.03, Hc_std = 0.05):
+        '''
+        Defines the lattice positions, magnetisation directions and coercive fields of an array of 
+        square ASI
+        Takes the unit cell from the initial defined parameters
+        Generates a normally distributed range of coercive fields of the bars using Hc_mean and Hc_std as a percentage
+        One thing to potentially change is to have the positions in nanometers
+        '''
+        self.type = 'tiltsquare'
+        theta = np.pi*theta/180.
+        self.side_len_x = 2*self.unit_cells_x+1
+        self.side_len_y = 2*self.unit_cells_y+1
+        grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 9))        
+        for x in range(0, 2*self.unit_cells_x+1):
+            for y in range(0, 2*self.unit_cells_y+1):
+                if (x+y)%2 != 0:
+                    if y%2 == 0:
+                        if x%2 ==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,np.cos(theta),np.sin(theta),0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        else:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,np.cos(theta),-np.sin(theta),0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                    else:
+                        if x%2==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,-np.cos(theta),-np.sin(theta),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        else:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,-np.cos(theta),np.sin(theta),0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+
+                else:
+                    if x%2 ==0 and x!=0 and y!=0 and x!=self.side_len_x-1 and y!=self.side_len_x-1:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,0])
+                    else:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+        self.lattice = grid
+
     def kagome(self, Hc_mean = 0.03, Hc_std = 0.05):
         '''
         Creates an array of Kagome ASI
@@ -1216,6 +1250,12 @@ class ASI_RPM():
         changes the magnetisation gap in the rpm class to the new_magnetisation
         '''
         self.magnetisation = new_magnetisation
+
+
+
+
+
+        
 
 
 

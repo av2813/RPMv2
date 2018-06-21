@@ -20,9 +20,17 @@ magnetisation = 800e3
 #Graphing and save/load test
 kagomeLattice1 = rpm.ASI_RPM(30,30,bar_length = bar_length, vertex_gap = vertex_gap, bar_thickness = bar_thickness, \
         bar_width = bar_width, magnetisation = magnetisation)
-kagomeLattice1.square()
+kagomeLattice1.tiltedSquare(45)
+#kagomeLattice1.graph()
 kagomeLattice1.randomMag()
+kagomeLattice1.localFieldHistogram(31,30,6, 30000)
+kagomeLattice1.graph()
+
+#kagomeLattice1.square()
+#kagomeLattice1.randomMag()
 #kagomeLattice1.localPlot(31,30,1)
+
+'''
 for bar_length in np.array([400,600,1000])*1e-9:
 	for width in np.array([80, 140])*1e-9:
 		for gaps in np.array([100, 200])*1e-9:
@@ -32,7 +40,7 @@ for bar_length in np.array([400,600,1000])*1e-9:
 			for n in np.arange(1, 6):
 				kagomeLattice1.localFieldHistogram(31,30, n, 10000, save = True)
 				
-
+'''
 
 #kagomeLattice1.square(Hc = Hc, Hc_std=Hc_std)
 #folder = r'C:\Users\av2813\Box\Simulations\Mumax3\mumax3.9final_windows\HPCResults\GroundSemiCircle\pkl'
