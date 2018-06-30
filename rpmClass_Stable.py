@@ -853,8 +853,8 @@ class ASI_RPM():
         localField = self.Hlocal3(x,y,n=n)
         unit_vector = self.lattice[x,y,3:6]
         dField = np.dot(np.array(localField), unit_vector)
-        efectiveCoer = self.lattice[x,y,6]+dField
-        return(effectCoer)
+        effectiveCoer = self.lattice[x,y,6]+dField
+        return(effectiveCoer)
 
     def effectiveCoerciveHistogram(self, n, save = False):
         '''
@@ -879,6 +879,33 @@ class ASI_RPM():
                 os.makedirs(folder)
             plt.savefig(folder+r'ECoerHistogram_n%.0f.png' %(n))
             plt.savefig(folder+r'ECoerHistogram_n%.0f.pdf' %(n))
+            plt.close()
+        else:
+            plt.show()
+
+    def coerciveHistogram(self, n save = False):
+        '''
+        Works out what the effective Coercive field is for a given lattice.
+        Calculates the dipolar field for n nearest neighbours
+        Can be set to automatically save
+        '''
+        Coer = []
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if abs(self.lattice[x,y,6]) != 0:
+                    Coer.append(self.lattice[x,y,6])
+        fig, ax1 = plt.subplots(1, 1)
+        ax1.hist(Coer, normed=True, bins=np.linspace(min(Coer),max(Coer), num=101), alpha=1.)
+        ax1.set_ylabel('Count')
+        ax1.set_xlabel('Field Strength along axis (T)')
+        ax1.set_title('Coercive Field - n='+str(n)+' nearest neighbours')
+        if save == True:
+            folder = os.getcwd()+r'\\'+self.type+r'_CoerciveFieldHistogram_length%.2Ewidth%.2Evgap%.2Ethick%.2E\\' \
+            %(self.bar_length, self.bar_width, self.vertex_gap, self.bar_thickness)
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            plt.savefig(folder+r'CoerHistogram_n%.0f.png' %(n))
+            plt.savefig(folder+r'CoerHistogram_n%.0f.pdf' %(n))
             plt.close()
         else:
             plt.show()

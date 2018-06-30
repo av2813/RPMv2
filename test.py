@@ -6,7 +6,7 @@ import numpy as np
 from functools import reduce
 import time
 
-importlib.reload(rpm)		#make sure that the class is updated with any chanes
+importlib.reload(rpm)		#make sure that the class is updated with any changes
 
 #parameters
 Hc = 0.062
