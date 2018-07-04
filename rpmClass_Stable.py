@@ -119,6 +119,40 @@ class ASI_RPM():
                         grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
         self.lattice = grid
 
+    def tiltedSquare(self,theta, Hc_mean = 0.03, Hc_std = 0.05):
+        '''
+        Defines the lattice positions, magnetisation directions and coercive fields of an array of 
+        square ASI
+        Takes the unit cell from the initial defined parameters
+        Generates a normally distributed range of coercive fields of the bars using Hc_mean and Hc_std as a percentage
+        One thing to potentially change is to have the positions in nanometers
+        '''
+        self.type = 'tiltsquare'
+        theta = np.pi*theta/180.
+        self.side_len_x = 2*self.unit_cells_x+1
+        self.side_len_y = 2*self.unit_cells_y+1
+        grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 9))        
+        for x in range(0, 2*self.unit_cells_x+1):
+            for y in range(0, 2*self.unit_cells_y+1):
+                if (x+y)%2 != 0:
+                    if y%2 == 0:
+                        if x%2 ==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,np.cos(theta),np.sin(theta),0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        else:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,np.cos(theta),-np.sin(theta),0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                    else:
+                        if x%2==0:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,-np.cos(theta),-np.sin(theta),0.,np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+                        else:
+                            grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,-np.cos(theta),np.sin(theta),0., np.random.normal(loc=Hc_mean, scale=Hc_std*Hc_mean, size=None),0,None])
+
+                else:
+                    if x%2 ==0 and x!=0 and y!=0 and x!=self.side_len_x-1 and y!=self.side_len_x-1:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,0])
+                    else:
+                        grid[x,y] = np.array([x*self.unit_cell_len,y*self.unit_cell_len,0.,0.,0.,0.,0,0,None])
+        self.lattice = grid
+
     def kagome(self, Hc_mean = 0.03, Hc_std = 0.05):
         '''
         Creates an array of Kagome ASI
@@ -1031,11 +1065,99 @@ class ASI_RPM():
         ax1.hist(field, normed=True, bins=np.linspace(min(field)*1.1,max(field)*1.1, num=101), alpha=1.)
         ax1.set_ylabel('Count')
         ax1.set_xlabel('Field Strength along axis (T)')
+<<<<<<< HEAD
         ax1.set_title('Dipolar Field - n='+str(n)+' nearest neighbours')
         plt.show()
 
     def latticeFieldHistogram(self, n):
         field = []
+=======
+        ax1.set_title(r'Random State Dipolar Field - n=%.0f nearest neighbours' %(n))
+        s = '''     mean = %.2E
+            std = %.2E
+            range = %.2E''' %(np.mean(np.array(field)), np.std(np.array(field)), (max(field)-min(field))/2.)
+        plt.figtext(0.6,0.7,s)
+        if save == True:
+            folder = os.getcwd()+r'\\'+self.type+r'_localFieldHistogram_length%.2Ewidth%.2Evgap%.2Ethick%.2E\\' \
+            %(self.bar_length, self.bar_width, self.vertex_gap, self.bar_thickness)
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            plt.savefig(folder+r'Histogram_x%.0fy%.0f_n%.0f_total%.0f.png' %(x, y, n, total))
+            plt.savefig(folder+r'Histogram_x%.0fy%.0f_n%.0f_total%.0f.pdf' %(x, y, n, total))
+            plt.close()
+        else:
+            plt.show()
+
+    def effectiveCoercive(self, x, y, n):
+        '''
+        Calculates the effective coercive field at a give lattice location for n nearest neighbours
+        '''
+        localField = self.Hlocal3(x,y,n=n)
+        unit_vector = self.lattice[x,y,3:6]
+        dField = np.dot(np.array(localField), unit_vector)
+        effectiveCoer = self.lattice[x,y,6]+dField
+        return(effectiveCoer)
+
+    def effectiveCoerciveHistogram(self, n, save = False):
+        '''
+        Works out what the effective Coercive field is for a given lattice.
+        Calculates the dipolar field for n nearest neighbours
+        Can be set to automatically save
+        '''
+        Coer = []
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if abs(self.lattice[x,y,6]) != 0:
+                    Coer.append(self.effectiveCoercive(x,y,n))
+        fig, ax1 = plt.subplots(1, 1)
+        ax1.hist(Coer, normed=True, bins=np.linspace(min(Coer),max(Coer), num=101), alpha=1.)
+        ax1.set_ylabel('Count')
+        ax1.set_xlabel('Field Strength along axis (T)')
+        ax1.set_title('Effective Coercive Field - n='+str(n)+' nearest neighbours')
+        if save == True:
+            folder = os.getcwd()+r'\\'+self.type+r'_CoerciveFieldHistogram_length%.2Ewidth%.2Evgap%.2Ethick%.2E\\' \
+            %(self.bar_length, self.bar_width, self.vertex_gap, self.bar_thickness)
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            plt.savefig(folder+r'ECoerHistogram_n%.0f.png' %(n))
+            plt.savefig(folder+r'ECoerHistogram_n%.0f.pdf' %(n))
+            plt.close()
+        else:
+            plt.show()
+
+    def coerciveHistogram(self, n save = False):
+        '''
+        Works out what the effective Coercive field is for a given lattice.
+        Calculates the dipolar field for n nearest neighbours
+        Can be set to automatically save
+        '''
+        Coer = []
+        for x in range(0, self.side_len_x):
+            for y in range(0, self.side_len_y):
+                if abs(self.lattice[x,y,6]) != 0:
+                    Coer.append(self.lattice[x,y,6])
+        fig, ax1 = plt.subplots(1, 1)
+        ax1.hist(Coer, normed=True, bins=np.linspace(min(Coer),max(Coer), num=101), alpha=1.)
+        ax1.set_ylabel('Count')
+        ax1.set_xlabel('Field Strength along axis (T)')
+        ax1.set_title('Coercive Field - n='+str(n)+' nearest neighbours')
+        if save == True:
+            folder = os.getcwd()+r'\\'+self.type+r'_CoerciveFieldHistogram_length%.2Ewidth%.2Evgap%.2Ethick%.2E\\' \
+            %(self.bar_length, self.bar_width, self.vertex_gap, self.bar_thickness)
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            plt.savefig(folder+r'CoerHistogram_n%.0f.png' %(n))
+            plt.savefig(folder+r'CoerHistogram_n%.0f.pdf' %(n))
+            plt.close()
+        else:
+            plt.show()
+
+    def latticeFieldHistogram(self, n, save = False):
+        '''
+        Plots a histogram for the field on the lattice.
+        Can be set to automatically save
+        '''
+>>>>>>> master
         field = []
         for x in range(0, self.side_len_x):
             for y in range(0, self.side_len_y):
@@ -1599,6 +1721,12 @@ class ASI_RPM():
         plt.savefig(os.path.join(folder, 'VertexFieldsteps')) 
 
 
+
+
+
+
+
+        
 
 
 

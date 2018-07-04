@@ -971,6 +971,34 @@ class ASI_RPM():
         self.magnetisation = new_magnetisation
 
 
+    def thermalEnergy(self, temp):
+        k_B = 1.38e-23
+        return(k_B*temp)
+
+    def demagEnergy(self,x,y, Hmax = 0., Htheta = 0., n=3):
+        fieldApplied = Hmax*np.array([np.cos(Htheta), np.sin(Htheta), 0.])
+        fieldLocal = self.Hlocal(x,y, n)
+        field = fieldLocal+fieldApplied
+        demag = -1*4e-7*np.pi*np.dot(self.lattice[x,y,3:6], field)
+        return(demag)
+
+    def anisotropyEnergy(self, K_ani):
+        volume = self.width*self.bar_thickness*self.bar_length
+        return(K_ani*volume)
+
+    def flipProb(self, x,y,temp,K_ani,Hmax = 0., Htheta=0., n=3):
+        energy = np.sum(self.thermalEnergy(temp), demag(x,y,Hmax, Htheta, n))
+        barrierE = self.anisotropyEnergy(K_ani)
+        prob = np.exp(-energy/ani)
+        return(prob)
+
+    def kineticMC(self, temp, K_ani, Hmax=0., Htheta=0., n=3):
+        for x in self.side_len_x:
+            for y in self.side_len_y:
+                prob = self.flipProb(x,y,temp,K_ani, Hmax=Hmax, Htheta=Htheta, n=n)
+                if prob > np.random.Random(0,1):
+                    self.flipSpin(x,y)
+
 
 '''
 Hc = 0.062

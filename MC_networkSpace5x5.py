@@ -4,7 +4,10 @@ import os
 import importlib
 import matplotlib.pyplot as plt
 import numpy as np
+<<<<<<< HEAD
 from functools import reduce
+=======
+>>>>>>> master
 import time
 import sys
 
