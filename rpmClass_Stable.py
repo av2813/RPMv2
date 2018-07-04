@@ -9,6 +9,7 @@ import copy
 import os
 
 
+
 class ASI_RPM():
     def __init__(self, unit_cells_x, unit_cells_y, lattice = None, \
         bar_length = 220e-9, vertex_gap = 1e-7, bar_thickness = 25e-9, \
@@ -16,6 +17,8 @@ class ASI_RPM():
         self.lattice = lattice
         self.type = None
         self.type = None
+        self.Hc = None
+        self.Hc_std = None
         self.previous = None
         self.unit_cells_x = unit_cells_x
         self.unit_cells_y = unit_cells_y
@@ -39,7 +42,8 @@ class ASI_RPM():
         file = file.replace('.','p')
         parameters = np.array([self.unit_cells_x,self.unit_cells_y,\
             self.bar_length,self.vertex_gap,self.bar_width,\
-            self.bar_thickness,self.magnetisation, self.side_len_x, self.side_len_y, self.type])
+            self.bar_thickness,self.magnetisation, self.side_len_x, self.side_len_y, self.type,\
+            self.Hc, self.Hc_std])
         np.savez(os.path.join(folder,file), self.lattice, parameters)
 
     def load(self, file):
@@ -59,6 +63,8 @@ class ASI_RPM():
         self.side_len_x = np.int(parameters[7])
         self.side_len_y = np.int(parameters[8])
         self.type = parameters[9]
+        self.Hc = parameters[10]
+        self.Hc_std = parameters[11]
         self.lattice = npzfile['arr_0']
 
     def loadSpinWrite(self, file):
@@ -92,6 +98,8 @@ class ASI_RPM():
         One thing to potentially change is to have the positions in nanometers
         '''
         self.type = 'square'
+        self.Hc = Hc_mean
+        self.Hc_std = Hc_std
         self.side_len_x = 2*self.unit_cells_x+1
         self.side_len_y = 2*self.unit_cells_y+1
         grid = np.zeros((2*self.unit_cells_x+1, 2*self.unit_cells_y+1, 9))        
@@ -118,6 +126,8 @@ class ASI_RPM():
         Generates a normally distributed range of coercive fields of the bars using Hc_mean and Hc_std
         '''
         self.type = 'kagome'
+        self.Hc = Hc_mean
+        self.Hc_std = Hc_std
         xfactor = 2*np.cos(np.pi/6)
         yfactor = 2*np.sin(np.pi/6)
         self.side_len_x = 2*self.unit_cells_x+1
@@ -193,6 +203,8 @@ class ASI_RPM():
 
     def long_shakti(self, Hc_mean = 0.062, Hc_std = 0.05):
         self.type = 'long_shakti'
+        self.Hc = Hc_mean
+        self.Hc_std = Hc_std
         self.side_len_x = 4*self.unit_cells_x+1
         self.side_len_y = 4*self.unit_cells_y+1
         grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
@@ -249,6 +261,8 @@ class ASI_RPM():
     def tetris(self, Hc_mean = 0.03, Hc_std = 0.05):
         #Working on it
         self.type = 'tetris'
+        self.Hc = Hc_mean
+        self.Hc_std = Hc_std
         self.side_len_x = 16*self.unit_cells_x+1
         self.side_len_y = 16*self.unit_cells_y+1
         grid = np.zeros((self.side_len_x, self.side_len_y, 9))        
@@ -433,7 +447,7 @@ class ASI_RPM():
             self.lattice = grid
     
     
-    def fieldSweep(self, Hmax, steps, Htheta, n=10, loops=1, folder = None):
+    def fieldSweep(self, Hmax, steps, Htheta, n=10, loops=1, folder = None, q1 = False):
         '''
         Sweeps through from 90% of the minimum Coercive field to Hmax at angle Htheta in steps. 
         Total number of steps for a full minor loop is 4*(step+1).
@@ -447,20 +461,24 @@ class ASI_RPM():
         Htheta = np.pi*Htheta/180
         testLattice[testLattice[:,:,6] == 0] = np.nan
         Hc_min = np.nanmin(testLattice[:,:,6])
-        print(Hc_min)
         
         q = []
         mag = []
         monopole = []
         fieldloops = []
         vertex = []
-        #print(Hc_min)
         field_steps = np.linspace(Hc_min*0.9,Hmax,steps+1)
         field_steps = np.append(field_steps, np.linspace(Hmax,Hc_min*0.9,steps+1))
         field_steps = np.append(field_steps, np.linspace(-(Hc_min*0.9),-Hmax,steps+1))
         field_steps = np.append(field_steps, np.linspace(-Hmax,-(Hc_min*0.9),steps+1))
         print(field_steps)
         counter = 0
+        if folder == None:
+            self.save('InitialRPMLattice_Hmax%(Hmax)e_steps%(steps)d_Angle%(Htheta)e_neighbours%(n)d_Loops%(loops)d' % locals(), folder = folder)
+        else:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            self.save('InitialRPMLattice_Hmax%(Hmax)e_steps%(steps)d_Angle%(Htheta)e_neighbours%(n)d_Loops%(loops)d' % locals(), folder = folder)
         for i in range(0, loops):
             self.previous = copy.deepcopy(self)
             for j in field_steps:
@@ -480,6 +498,9 @@ class ASI_RPM():
                         os.makedirs(folder)
                     self.save('Lattice_counter%(counter)d_Loop%(i)d_FieldApplied%(j)e_Angle%(Htheta)e' % locals(), folder = folder)
                 counter+=1
+            if q1 == True:
+                if q[-1]==1:
+                    break
         self.save('FinalRPMLattice_Hmax%(Hmax)e_steps%(steps)d_Angle%(Htheta)e_neighbours%(n)d_Loops%(loops)d' % locals(), folder = folder)
         fieldloops = np.array(fieldloops)
         q = np.array(q)
@@ -487,7 +508,7 @@ class ASI_RPM():
         monopole = np.array(monopole)
         vertex = np.array(vertex)
         file = 'RPMStateInfo_Hmax%(Hmax)e_steps%(steps)d_Angle%(Htheta)e_neighbours%(n)d_Loops%(loops)d' % locals()
-        parameters = np.array([Hmax, steps, Htheta, n, loops])
+        parameters = np.array([Hmax, steps, Htheta, n, loops, self.Hc, self.Hc_std])
         if folder == None:
             folder = os.getcwd()
             np.savez(os.path.join(folder, file), parameters, fieldloops, q, mag, monopole, vertex)
@@ -495,11 +516,263 @@ class ASI_RPM():
             np.savez(os.path.join(folder, file), parameters, fieldloops, q, mag, monopole, vertex)
 
 
+    def appliedFieldSweep(self, Hmin, Hmax, Hsteps, steps, Htheta, n=4, loops=5, folder = None):
+        Hrange = np.linspace(Hmin, Hmax, Hsteps)
+        for H in Hrange:
+            if folder == None:
+                newfolder = os.getcwd()+'\\Hmax'+str(H/self.Hc)+'\\'
+            else:
+                newfolder = folder+'\\Hmax'+str(H/self.Hc)+'\\'
+            print(folder)
+            self.fieldSweep(H, steps, Htheta, n=n, loops = loops, folder = newfolder, q1 = True)
+        np.savez(os.path.join(folder, 'StateCode'), np.array(Hrange))
 
+    def searchRPM_monte(self, samples, Hmax, Htheta = 45, steps =10, n=3,loops=4, folder = None):
+        '''
+        For randomise the starting state of the lattice and then 
+        it will then perform a field sweep until RPM behaviour is observed or the number of loops (loops) is exceded
+        The field sweep parameters are specified by:
+        Hmax = the maximum field to be applied
+        Htheta = the direction which the field will be applied in (measured in degrees)
+        steps = the number of field steps between 0 and Hmax
+        n = the number of nearest neighbours to be considered
+        loops =  the number of minor field loops that will be cycled through in each sweep
+
+        This will repeat for everypoint on the lattice. Saving the lattice at each field step
+        This has not been tested yet
+        '''
+        label = np.arange(0,samples)
+        for state in label:
+            self.randomMag()
+            if folder == None:
+                newfolder = os.getcwd()+'\\State'+str(state)+'\\'
+            else:
+                newfolder = folder+'\\State'+str(state)+'\\'
+            self.fieldSweep(Hmax, steps, Htheta, n=n, loops = loops, folder = newfolder, q1 = True)
+        np.savez(os.path.join(folder, 'StateCode'), np.array(label))
+
+    def searchRPM_single(self, Hmax, Htheta = 45, steps =10, n=3, loops=4, folder = None):
+        '''
+        Will flip a single bar at each point on the lattice
+        it will then perform a field sweep until RPM behaviour is observed or the number of loops (loops) is exceded
+        The field sweep parameters are specified by:
+        Hmax = the maximum field to be applied
+        Htheta = the direction which the field will be applied in (measured in degrees)
+        steps = the number of field steps between 0 and Hmax
+        n = the number of nearest neighbours to be considered
+        loops =  the number of minor field loops that will be cycled through in each sweep
+
+        This will repeat for everypoint on the lattice. Saving the lattice at each field step
+        This has not been tested yet
+        '''
+        positions = []
+        #initial_state = copy.deepcopy(self)
+        if folder == None:
+            self.save('InitialState', os.getcwd())
+        else:
+            self.save('InitialState', folder)
+        for x in np.arange(0, self.side_len_x):
+            for y in np.arange(0, self.side_len_y):
+                if self.lattice[x,y,6]!=0:
+                    positions.append([x,y])
+                    if folder == None:
+                        newfolder = os.getcwd()+'\\x'+str(x)+'y'+str(y)+'\\'
+                    else:
+                        newfolder = folder+'\\x'+str(x)+'y'+str(y)+'\\'
+                    self.load(os.path.join(folder+r'\InitialState.npz'))
+                    self.flipSpin(x,y)
+                    self.fieldSweep(Hmax, steps, Htheta, n=n, loops = loops, folder = newfolder, q1 = True)
+        np.savez(os.path.join(folder, 'StateCode'), np.array(positions))
     
-    #for Hx, Hy in np.meshgrid(Hx_list, Hy_list, sparse = True):
-    #np.meshgrid(Hx_list, Hy_list, sparse = True):
-    
+    def searchRPM_multiple(self, samples, flips, Hmax, Htheta = 45, steps =10, n=3,loops=4, folder = None):
+        '''
+        Will flip a number of bars magnetisation direction given by the variable flips at random positions on the lattice
+        it will then perform a field sweep until RPM behaviour is observed or the number of loops (loops) is exceded
+        The field sweep parameters are specified by:
+        Hmax = the maximum field to be applied
+        Htheta = the direction which the field will be applied in (measured in degrees)
+        steps = the number of field steps between 0 and Hmax
+        n = the number of nearest neighbours to be considered
+        loops =  the number of minor field loops that will be cycled through in each sweep
+
+        This will then be repeated on the same initial starting state the number of times speficied by samples
+        This has not been tested yet
+        '''
+        #initial_state = copy.deepcopy(self)
+        if folder == None:
+            self.save('InitialState', os.getcwd())
+        else:
+            self.save('InitialState', folder)
+        positions = []
+        for state in np.arange(0, samples):
+            self.load(folder+r'InitialState')
+            switch = 0
+            flip_loc = []
+            while switch<flips:
+                x = np.random.randint(0, self.side_len_x)
+                y = np.random.randint(0, self.side_len_y)
+                if grid[x,y,6]!=0:
+                    self.flipSpin(x,y)
+                    switch+=1
+                    flip_loc.append([x,y])
+            positions.append(flip_loc)
+            if folder == None:
+                newfolder = os.getcwd()+'\\x'+str(x)+'y'+str(y)+'\\'
+            else:
+                newfolder = folder+'\\x'+str(x)+'y'+str(y)+'\\'
+            self.fieldSweep(Hmax, steps, Htheta, n=n, loops = loops, folder = newfolder, q1 = True)
+        np.savez(os.path.join(folder, 'StateCode'), np.array(positions))
+
+    def analysisAppliedFieldSweep(self, folder):
+        statecode = np.load(os.path.join(folder, 'StateCode.npz'))
+        
+        lattice_list = []
+        for root, dirs, files in os.walk(folder):
+            for file in files:
+                if 'FinalRPMLattice' in file:
+                    self.load(os.path.join(root, file))
+                    lattice_list.append(copy.deepcopy(self))
+        corr_list = np.zeros((len(lattice_list), len(lattice_list)))
+        i = 0
+        for l1 in lattice_list:
+            j = 0
+            for l2 in lattice_list:
+                corr_list[i, j] = (self.correlation(l1, l2))
+                j+=1
+            i+=1
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        heatmap = ax.pcolor(statecode*1000, statecode*1000,corr_list)
+        plt.xlabel('Maximum applied field (mT)')
+        plt.ylabel('Maximum applied field (mT)')       
+
+        plt.colorbar(heatmap)
+        plt.title('Correlation between all final states')
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        linegraph = ax.plot(statecode*1000,corr_list[-1,:], '.')
+        plt.xlabel('Maximum magnetic field (mT)')
+        plt.ylabel('Correlation relative to lowest magnetic field RPM state')
+        plt.show()
+
+    def analysisSingleFlip(self, folder):
+        statecode = np.load(os.path.join(folder, 'StateCode.npz'))
+        print(os.path.join(folder, 'InitialState.npz'))
+        statecode = np.array(statecode['arr_0'])
+        self.load(os.path.join(folder, 'InitialState.npz'))
+        Initial = self
+
+        #Initial.graph()
+        print(Initial)
+        print(len(statecode))
+        Hc_list = Initial.returnLattice()[:,:,6]
+        Hc_list[Hc_list==0] = np.nan
+        Hc_list = Hc_list.flatten()
+        
+        Hc_list = Hc_list[~np.isnan(Hc_list)]
+        print(Hc_list)
+        lattice_list = []
+        for root, dirs, files in os.walk(folder):
+            for file in files:
+                if 'FinalRPMLattice' in file:
+                    self.load(os.path.join(root, file))
+                    lattice_list.append(copy.deepcopy(self))
+        corr_list = np.zeros((len(lattice_list), len(lattice_list)))
+        
+        corr_compare = []
+        i = 0
+        for l1 in lattice_list:
+            j = 0
+            for l2 in lattice_list:
+                if l1 == l2:
+                    break
+                else:
+                    corr_list[i, j] = (self.correlation(l1, l2))
+                    j+=1
+            if i!=0:
+                corr_compare.append(self.correlation(l1,Initial))
+            i+=1
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        #print(statecode.shape)
+        #print(corr_list.shape)
+        #print(statecode[:,0])
+        #print(statecode[:,1])
+        battleship = plt.scatter(statecode[:,0], statecode[:,1], c = np.array(corr_compare))
+        plt.colorbar(battleship)
+        plt.xlabel('x position')
+        plt.ylabel('y position')
+        plt.title('Correlation to initial perturbation after single flip')
+        Hc = []
+        for pos in statecode:
+            Hc.append(self.returnLattice()[pos[0], pos[1], 6])
+        plt.figure()
+        plt.plot(np.array(Hc)*1000, corr_compare, '.')
+        plt.xlabel('Coercive field (mT) of bar flipped')
+        plt.ylabel('Correlation relative to initial RPM state')
+        plt.title('Correlation against coercive field of bar flipped')
+        plt.show()
+              
+    def analysisMC(self, folder):
+        statecode = np.load(os.path.join(folder, 'StateCode.npz'))
+        print(os.path.join(folder, 'InitialState.npz'))
+        statecode = np.array(statecode['arr_0'])
+        self.load(os.path.join(folder, 'InitialState.npz'))
+        Initial = self
+
+        #Initial.graph()
+        print(Initial)
+        print(len(statecode))
+        Hc_list = Initial.returnLattice()[:,:,6]
+        Hc_list[Hc_list==0] = np.nan
+        Hc_list = Hc_list.flatten()
+        
+        Hc_list = Hc_list[~np.isnan(Hc_list)]
+        print(Hc_list)
+        lattice_list = []
+        lattice_init = []
+
+        for root, dirs, files in os.walk(folder):
+            for file in files:
+                if 'FinalRPMLattice' in file:
+                    self.load(os.path.join(root, file))
+                    lattice_list.append(copy.deepcopy(self))
+                if 'InitialRPMLattice' in file:
+                    self.load(os.path.join(root, file))
+                    lattice_init.append(copy.deepcopy(self))
+        corr_list = np.zeros((len(lattice_list), len(lattice_list)))
+        corr_init = np.zeros((len(lattice_list), len(lattice_list)))
+        corr_compare = []
+        i = 0
+        for l1,l3 in zip(lattice_list,lattice_init):
+            j = 0
+            for l2,l4 in zip(lattice_list, lattice_init):
+
+                corr_list[i, j] = (self.correlation(l1, l2))
+                corr_init[i,j] = (self.correlation(l3,l4))
+
+                j+=1
+            i+=1
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        print(statecode.shape)
+        #print(corr_list.shape)
+        #print(statecode[:,0])
+        #print(statecode[:,1])
+        battleship = plt.pcolor(corr_list)
+        plt.colorbar(battleship)
+        plt.xlabel('MC sample number')
+        plt.ylabel('MC sample number')
+        plt.title('Correlation between final RPM states')
+        plt.figure()
+        plt.plot(corr_init.flatten(), corr_list.flatten(), '.')
+        plt.xlabel('Initial correlation between states')
+        plt.ylabel('Final correlation between states')
+        plt.title('Correlation between initial and final States')
+        plt.show()
+
+
+
     
     def dipole(self, m, r, r0):
         """Calculate a field in point r created by a dipole moment m located in r0.
@@ -611,7 +884,7 @@ class ASI_RPM():
                         y2 = self.side_len_y
                     local = grid[x1:x2,y1:y2]
                     #print(local[:,:,3])
-                    charge = np.sum(local[0:2,0:2, 3:6])-np.sum(local[1:3,1:3, 3:6])
+                    charge = (np.sum(local[0:2,0:2, 3:6])-np.sum(local[1:3,1:3, 3:6]))/4.
                     if self.type == 'kagome':
                         if x==0:
                             charge = np.sum(local[0,:,3]) -np.sum(local[1,:,3])+np.sum(local[:,0,4]) -np.sum(local[:,2,4])
@@ -825,7 +1098,7 @@ class ASI_RPM():
                     total +=1.0
         #print("Same total:",same)
         #print("Absolute total:", total)
-        print('Correlation factor:',same/total)
+        #print('Correlation factor:',same/total)
         return(same/total)
 
     def netMagnetisation(self):
@@ -889,6 +1162,8 @@ class ASI_RPM():
                         Vertex[x,y,4] = 3
                 else:
                     Vertex[x,y,:] = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
+        if self.type == 'kagome':
+            Vertex = np.array([])
         return(Vertex)
 
     def vertexTypeMap(self):
@@ -1001,9 +1276,10 @@ class ASI_RPM():
         plt.show()
         return(Correlation)
 
-
+    '''
     def searchRPM_monte(self, samples, Hmax, Htheta = 45, steps =10, n=3,loops=4, folder = None):
-        '''
+    '''
+    '''
         For randomise the starting state of the lattice and then 
         it will then perform a field sweep until RPM behaviour is observed or the number of loops (loops) is exceded
         The field sweep parameters are specified by:
@@ -1015,7 +1291,8 @@ class ASI_RPM():
 
         This will repeat for everypoint on the lattice. Saving the lattice at each field step
         This has not been tested yet
-        '''
+    '''
+    '''
         state_info = []
         grid = self.lattice
         grid[grid[:,:,6] == 0] = np.nan
@@ -1062,7 +1339,8 @@ class ASI_RPM():
 
 
     def searchRPM_single(self, Hmax, Htheta = 45, steps =10, n=3, loops=4, folder = None):
-        '''
+    '''
+    '''
         Will flip a single bar at each point on the lattice
         it will then perform a field sweep until RPM behaviour is observed or the number of loops (loops) is exceded
         The field sweep parameters are specified by:
@@ -1074,7 +1352,8 @@ class ASI_RPM():
 
         This will repeat for everypoint on the lattice. Saving the lattice at each field step
         This has not been tested yet
-        '''
+    '''
+    '''
         state_info = []
         grid = copy.deepcopy(self.lattice)
         grid[grid[:,:,6] == 0] = np.nan
@@ -1128,7 +1407,8 @@ class ASI_RPM():
                     
 
     def searchRPM_multiple(self, samples, flips, Hmax, Htheta = 45, steps =10, n=3,loops=4, folder = None):
-        '''
+    '''
+    '''
         Will flip a number of bars magnetisation direction given by the variable flips at random positions on the lattice
         it will then perform a field sweep until RPM behaviour is observed or the number of loops (loops) is exceded
         The field sweep parameters are specified by:
@@ -1140,7 +1420,8 @@ class ASI_RPM():
 
         This will then be repeated on the same initial starting state the number of times speficied by samples
         This has not been tested yet
-        '''
+    '''
+    '''
         initial_state = copy.deepcopy(self)
         grid = copy.deepcopy(self.lattice)
         grid[grid[:,:,6] == 0] = np.nan
@@ -1192,7 +1473,7 @@ class ASI_RPM():
             np.savez('StateInfo', np.array(state_info))
         else:
             np.savez(folder+r'StateInfo', np.array(state_info))
-
+    '''
    
     def flipSpin(self, x,y):
         '''
@@ -1225,83 +1506,98 @@ class ASI_RPM():
         '''
         self.magnetisation = new_magnetisation
 
+    def fieldSweepAnalysis(self, folder):
+        parameters_list = []
+        Hmax_list,Htheta_list, steps_list, n_list, loops_list = [],[],[],[],[]
+        Hc_list = []
+        Hc_std_list = []
+        field_steps_list = []
+        q_list = []
+        mag_list = []
+        monopole_list = []
+        vertex_list = []
+        for root, dirs, files in os.walk(folder):
+            for file in files:
+                if 'RPMStateInfo' in file:
+                    npzfile = np.load(os.path.join(root,file))
+                    parameters_list.append(npzfile['arr_0'])
+                    print(parameters_list)
+                    Hmax_list.append(npzfile['arr_0'][0])
+                    steps_list.append(npzfile['arr_0'][1])
+                    Htheta_list.append(npzfile['arr_0'][2])
+                    n_list.append(npzfile['arr_0'][3])
+                    loops_list.append(npzfile['arr_0'][4])
+                    Hc_list.append(npzfile['arr_0'][5])
+                    Hc_std_list.append(npzfile['arr_0'][6])
+                    field_steps_list.append(npzfile['arr_1'])
+                    q_list.append(npzfile['arr_2'])
+                    mag_list.append(npzfile['arr_3'])
+                    monopole_list.append(npzfile['arr_4'])
+                    vertex_list.append(npzfile['arr_5'])
+        for Hmax, loops, steps, q, mag, monopole, vertex in zip(Hmax_list, \
+                        loops_list, steps_list, q_list, mag_list, monopole_list, vertex_list):
+            self.plotCorrelation(folder, q, Hmax, loops, steps)
+            self.plotMagnetisation(folder, mag, Hmax, loops, steps)
+            self.plotMonopole(folder, monopole, Hmax, loops, steps)
+            self.plotVertex(folder, vertex, Hmax, loops, steps)
+        plt.show()
 
-
-
-class fieldSweepAnalysis():
-    def __init__(self, folder):
-        self.folder = folder
-        for file in os.listdir(folder):
-            if 'RPMStateInfo' in file:
-                npzfile = np.load(os.path.join(folder,file))
-                #print(npzfile)
-                parameters = npzfile['arr_0']
-                self.Hmax = parameters[0]
-                self.steps = parameters[1]
-                self.Htheta = parameters[2]
-                self.n = parameters[3]
-                self.loops = parameters[4]
-                self.field_steps = npzfile['arr_1']
-                self.q = npzfile['arr_2']
-                self.mag = npzfile['arr_3']
-                self.monopole = npzfile['arr_4']
-                self.vertex = npzfile['arr_5']
-
-    def plotCorrelation(self):
+    def plotCorrelation(self, folder, q, Hmax, loops, steps):
         corr = plt.figure('Correlation')
         ax_c = corr.add_subplot(111)
-        ax_c.plot(self.q,'.', label = self.Hmax)
+        ax_c.plot(q,'.', label = Hmax)
         plt.ylabel('Correlation')
         plt.xlabel('Number of field steps')
-        for i in np.arange(1, self.loops):
-            plt.axvline(i*(4*(self.steps+1)-1), color = 'k')
+        for i in np.arange(1, loops):
+            plt.axvline(i*(4*(steps+1)-1), color = 'k')
         plt.legend()
-        plt.savefig(os.path.join(self.folder, 'CorrelationFieldsteps'))
+        plt.savefig(os.path.join(folder, 'CorrelationFieldsteps'))
 
-    def plotMagnetisation(self):
+    def plotMagnetisation(self, folder, mag, Hmax, loops, steps):
         mag_plotx = plt.figure('Magnetisation')
         ax_mx = mag_plotx.add_subplot(111)
-        ax_mx.plot(2*self.mag[:,0],'.', label = self.Hmax)
+        ax_mx.plot(2*mag[:,0],'.', label = Hmax)
         plt.ylabel('Magnetisation (x-dir)')
         plt.xlabel('Number of field steps')
-        for i in np.arange(1, self.loops):
-            plt.axvline(i*(4*(self.steps+1)-1), color = 'k')
+        for i in np.arange(1, loops):
+            plt.axvline(i*(4*(steps+1)-1), color = 'k')
         plt.legend()
-        plt.savefig(os.path.join(self.folder, 'MagxFieldsteps'))
+        plt.savefig(os.path.join(folder, 'MagxFieldsteps'))
         mag_ploty = plt.figure('Magnetisation')
         ax_my = mag_ploty.add_subplot(111)
-        ax_my.plot(2*self.mag[:,1],'.', label = self.Hmax)
-        for i in np.arange(1, self.loops):
-            plt.axvline(i*(4*(self.steps+1)-1), color = 'k')
+        ax_my.plot(2*mag[:,1],'.', label = Hmax)
+        for i in np.arange(1, loops):
+            plt.axvline(i*(4*(steps+1)-1), color = 'k')
         plt.ylabel('Magnetisation (y-dir)')
         plt.xlabel('Number of field steps')
         plt.legend()
-        plt.savefig(os.path.join(self.folder, 'MagyFieldsteps'))
+        plt.savefig(os.path.join(folder, 'MagyFieldsteps'))
 
-    def plotMonopole(self):
+    def plotMonopole(self, folder, monopole, Hmax, loops, steps):
         mono = plt.figure('Monopole')
         ax_m = mono.add_subplot(111)
-        ax_m.plot(self.monopole, '.', label = self.Hmax)
+        ax_m.plot(monopole, '.', label = Hmax)
         plt.ylabel('Monopole density')
         plt.xlabel('Number of field steps')
-        for i in np.arange(1, self.loops):
-            plt.axvline(i*(4*(self.steps+1)-1), color = 'k')
+        for i in np.arange(1, loops):
+            plt.axvline(i*(4*(steps+1)-1), color = 'k')
         plt.legend()
-        plt.savefig(os.path.join(self.folder, 'MonopoleFieldsteps'))
+        plt.savefig(os.path.join(folder, 'MonopoleFieldsteps'))
 
-    def plotVertex(self):
+    def plotVertex(self, folder, vertex, Hmax, loops, steps):
         vert = plt.figure('Vertex')
         ax_v = vert.add_subplot(111)
-        ax_v.plot(self.vertex[:,0],'.', label = 'Type 1')
-        ax_v.plot(self.vertex[:,1],'.', label = 'Type 2')
-        ax_v.plot(self.vertex[:,2],'.', label = 'Type 3')
-        ax_v.plot(self.vertex[:,3],'.', label = 'Type 4')
+        ax_v.plot(vertex[:,0],'.', label = 'Type 1')
+        ax_v.plot(vertex[:,1],'.', label = 'Type 2')
+        ax_v.plot(vertex[:,2],'.', label = 'Type 3')
+        ax_v.plot(vertex[:,3],'.', label = 'Type 4')
         plt.ylabel('Vertex Percentage')
         plt.xlabel('Number of field steps')
-        for i in np.arange(1, self.loops):
-            plt.axvline(i*(4*(self.steps+1)-1), color = 'k')
+        for i in np.arange(1, loops):
+            plt.axvline(i*(4*(steps+1)-1), color = 'k')
         plt.legend()
-        plt.savefig(os.path.join(self.folder, 'VertexFieldsteps'))
+        plt.savefig(os.path.join(folder, 'VertexFieldsteps')) 
+
 
 
 
