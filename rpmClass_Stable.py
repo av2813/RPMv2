@@ -7,7 +7,6 @@ from matplotlib.ticker import MaxNLocator
 #from matplotlib.colors import Normalize
 import copy
 import os
-import matplotlib.animation as ani
 import matplotlib.animation as pla
 
 
@@ -24,7 +23,7 @@ class ASI_RPM():
         self.previous = None
         self.unit_cells_x = unit_cells_x
         self.unit_cells_y = unit_cells_y
-        self.side_len_x = None      #The side length is now defined in the 
+        self.side_len_x = None      #The side length is now defined in the square lattice
         self.side_len_y = None
         self.bar_length = bar_length
         self.vertex_gap = vertex_gap
@@ -588,7 +587,6 @@ class ASI_RPM():
         loops =  the number of minor field loops that will be cycled through in each sweep
 
         This will repeat for everypoint on the lattice. Saving the lattice at each field step
-        This has not been tested yet
         '''
         label = np.arange(0,samples)
         for state in label:
@@ -612,10 +610,8 @@ class ASI_RPM():
         loops =  the number of minor field loops that will be cycled through in each sweep
 
         This will repeat for everypoint on the lattice. Saving the lattice at each field step
-        This has not been tested yet
         '''
         positions = []
-        #initial_state = copy.deepcopy(self)
         if folder == None:
             self.save('InitialState', os.getcwd())
         else:
@@ -645,9 +641,7 @@ class ASI_RPM():
         loops =  the number of minor field loops that will be cycled through in each sweep
 
         This will then be repeated on the same initial starting state the number of times speficied by samples
-        This has not been tested yet
         '''
-        #initial_state = copy.deepcopy(self)
         if folder == None:
             self.save('InitialState', os.getcwd())
         else:
@@ -773,8 +767,6 @@ class ASI_RPM():
         statecode = np.array(statecode['arr_0'])
         self.load(os.path.join(folder, 'InitialState.npz'))
         Initial = self
-
-        #Initial.graph()
         print(Initial)
         print(len(statecode))
         Hc_list = Initial.returnLattice()[:,:,6]
@@ -801,10 +793,8 @@ class ASI_RPM():
         for l1,l3 in zip(lattice_list,lattice_init):
             j = 0
             for l2,l4 in zip(lattice_list, lattice_init):
-
                 corr_list[i, j] = (self.correlation(l1, l2))
                 corr_init[i,j] = (self.correlation(l3,l4))
-
                 j+=1
             i+=1
         fig = plt.figure()
@@ -826,13 +816,13 @@ class ASI_RPM():
         plt.show()
 
 
-    def fieldSweepAnimation(self, folder):
+    def fieldSweepAnimation(self, folder, name = 'Lattice_counter'):
         ims = []
         counter = []
         fig_anim = plt.figure('Animation')
         for root, dirs, files in os.walk(folder):
             for file in files:
-                if 'Lattice_counter' in file:
+                if name in file:
                     print(file)
                     self.clearLattice()
                     self.load(os.path.join(root, file))
@@ -840,8 +830,8 @@ class ASI_RPM():
                     print((file[15:17].replace('_', '')))
                     counter.append((file[15:17].replace('_', '')))
                     ims.append([im])
-        sorted_ims = [x for _,x in sorted(zip(counter,ims))]
-        anim = pla.ArtistAnimation(fig_anim, sorted_ims, interval = 100, blit = True, repeat_delay = 1000)
+        #sorted_ims = [x for _,x in sorted(zip(counter,ims))]
+        anim = pla.ArtistAnimation(fig_anim, ims, interval = 1000, blit = True, repeat_delay = 1000)
         plt.show()
         
 
