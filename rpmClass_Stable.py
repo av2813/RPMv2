@@ -7,6 +7,7 @@ from matplotlib.ticker import MaxNLocator
 #from matplotlib.colors import Normalize
 import copy
 import os
+import matplotlib.animation as pla
 
 
 
@@ -404,7 +405,7 @@ class ASI_RPM():
         cb1.locator = MaxNLocator( nbins = 7)
         cb1.update_ticks()
         graph = ax[1].quiver(X, Y, Mx, My, C, angles='xy', scale_units='xy',  pivot = 'mid')
-        ax[1].set_xlim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
+        ax[1].set_xlim([-1*self.unit_cell_len, np.max(X)+self.unit_cell_len])
         ax[1].set_ylim([-1*self.unit_cell_len, np.max(Y)+self.unit_cell_len])
         ax[1].set_title('Counts')
         cb2 = fig.colorbar(graph, fraction=0.046, pad=0.04, ax = ax[1])
@@ -422,9 +423,22 @@ class ASI_RPM():
         plt.quiver(X, Y, Mx, My, C, angles='xy', scale_units='xy',  pivot = 'mid')
         ax.set_xlim([-1*self.unit_cell_len, np.max(X)])
         ax.set_ylim([-1*self.unit_cell_len, np.max(Y)])
+        return(graph)
         plt.draw()
         plt.show()
         
+    def animateGraph(self):
+        grid = self.lattice
+        X = grid[:,:,0].flatten()
+        Y = grid[:,:,1].flatten()
+        z = grid[:,:,2].flatten()
+        Mx = grid[:,:,3].flatten()
+        My = grid[:,:,4].flatten()
+        Mz = grid[:,:,5].flatten()
+        Hc = grid[:,:,6].flatten()
+        C = grid[:,:,7].flatten()
+        im = plt.quiver(X, Y, Mx, My, C, angles='xy', scale_units='xy',  pivot = 'mid')
+        return(im)
 
     def resetCount(self):
         '''
@@ -806,7 +820,27 @@ class ASI_RPM():
         plt.show()
 
 
+    def fieldSweepAnimation(self, folder):
+        ims = []
+        counter = []
+        fig_anim = plt.figure('Animation')
+        for root, dirs, files in os.walk(folder):
+            for file in files:
+                if 'Lattice_counter' in file:
+                    print(file)
+                    self.clearLattice()
+                    self.load(os.path.join(root, file))
+                    im = self.animateGraph()
+                    print((file[15:17].replace('_', '')))
+                    counter.append((file[15:17].replace('_', '')))
+                    ims.append([im])
+        sorted_ims = [x for _,x in sorted(zip(counter,ims))]
+        anim = pla.ArtistAnimation(fig_anim, sorted_ims, interval = 100, blit = True, repeat_delay = 1000)
+        plt.show()
+        
 
+    def clearLattice(self):
+        self.lattice = None
     
     def dipole(self, m, r, r0):
         """Calculate a field in point r created by a dipole moment m located in r0.
@@ -1065,13 +1099,12 @@ class ASI_RPM():
         ax1.hist(field, normed=True, bins=np.linspace(min(field)*1.1,max(field)*1.1, num=101), alpha=1.)
         ax1.set_ylabel('Count')
         ax1.set_xlabel('Field Strength along axis (T)')
-<<<<<<< HEAD
+
         ax1.set_title('Dipolar Field - n='+str(n)+' nearest neighbours')
         plt.show()
 
     def latticeFieldHistogram(self, n):
         field = []
-=======
         ax1.set_title(r'Random State Dipolar Field - n=%.0f nearest neighbours' %(n))
         s = '''     mean = %.2E
             std = %.2E
@@ -1125,7 +1158,7 @@ class ASI_RPM():
         else:
             plt.show()
 
-    def coerciveHistogram(self, n save = False):
+    def coerciveHistogram(self, n, save = False):
         '''
         Works out what the effective Coercive field is for a given lattice.
         Calculates the dipolar field for n nearest neighbours
@@ -1157,7 +1190,6 @@ class ASI_RPM():
         Plots a histogram for the field on the lattice.
         Can be set to automatically save
         '''
->>>>>>> master
         field = []
         for x in range(0, self.side_len_x):
             for y in range(0, self.side_len_y):
