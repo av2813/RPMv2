@@ -32,7 +32,7 @@ neighbours = 4				#The radius of neighbouring spins that are included in the loc
 loops = 4					#The number of minor field loops to be done
 
 #File information
-folder = r'C:\Users\alexv\OneDrive\Documents\GitHub\RPMv2\FlipStateTest'	#The folder for the files to be saved in.
+folder = r'C:\Users\alexv\Box\GitHub\RPM\RPM_Data\FlipStateTest'	#The folder for the files to be saved in.
 													#must in the format as shown
 
 #Define the system
@@ -53,5 +53,5 @@ lattice.searchRPM_single(field_max, Htheta = 45, steps =5, n=neighbours,loops=lo
 '''
 
 lattice.analysisSingleFlip(folder)
-folder = r'C:\Users\alexv\OneDrive\Documents\GitHub\RPMv2\MCStateTest'
+folder = r'C:\Users\alexv\Box\GitHub\RPM\RPM_Data\FlipStateTest'
 lattice.analysisMC(folder)

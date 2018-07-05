@@ -7,6 +7,7 @@ from matplotlib.ticker import MaxNLocator
 #from matplotlib.colors import Normalize
 import copy
 import os
+import matplotlib.animation as ani
 
 
 
@@ -677,8 +678,8 @@ class ASI_RPM():
         fig = plt.figure()
         ax = fig.add_subplot(111)
         heatmap = ax.pcolor(statecode*1000, statecode*1000,corr_list)
-        plt.xlabel('Maximum applied field (mT)')
-        plt.ylabel('Maximum applied field (mT)')       
+        plt.xlabel('Microstate for Minor Loop with maximum applied field (mT)')
+        plt.ylabel('Microstate for Minor Loop with maximum applied field (mT)')       
 
         plt.colorbar(heatmap)
         plt.title('Correlation between all final states')
@@ -690,21 +691,15 @@ class ASI_RPM():
         plt.show()
 
     def analysisSingleFlip(self, folder):
+        '''
+        
+        '''
         statecode = np.load(os.path.join(folder, 'StateCode.npz'))
         print(os.path.join(folder, 'InitialState.npz'))
         statecode = np.array(statecode['arr_0'])
         self.load(os.path.join(folder, 'InitialState.npz'))
-        Initial = self
+        Initial = self       
 
-        #Initial.graph()
-        print(Initial)
-        print(len(statecode))
-        Hc_list = Initial.returnLattice()[:,:,6]
-        Hc_list[Hc_list==0] = np.nan
-        Hc_list = Hc_list.flatten()
-        
-        Hc_list = Hc_list[~np.isnan(Hc_list)]
-        print(Hc_list)
         lattice_list = []
         for root, dirs, files in os.walk(folder):
             for file in files:
@@ -738,16 +733,27 @@ class ASI_RPM():
         plt.ylabel('y position')
         plt.title('Correlation to initial perturbation after single flip')
         Hc = []
-        for pos in statecode:
+        Hc_eff = []
+        for pos,lattice in zip(statecode, lattice_list):
             Hc.append(self.returnLattice()[pos[0], pos[1], 6])
+            self = lattice
+            Hc_eff.append(self.effectiveCoercive(pos[0], pos[1], 4))
         plt.figure()
         plt.plot(np.array(Hc)*1000, corr_compare, '.')
         plt.xlabel('Coercive field (mT) of bar flipped')
         plt.ylabel('Correlation relative to initial RPM state')
         plt.title('Correlation against coercive field of bar flipped')
+        plt.figure()
+        plt.plot(np.array(Hc_eff)*1000, corr_compare, '.')
+        plt.xlabel('Effective Coercive field (mT) of bar flipped')
+        plt.ylabel('Correlation relative to initial RPM state')
+        plt.title('Correlation against coercive field of bar flipped')
         plt.show()
               
     def analysisMC(self, folder):
+        '''
+        Analyses the results from a Monte Carlo initial RPM states
+        '''
         statecode = np.load(os.path.join(folder, 'StateCode.npz'))
         print(os.path.join(folder, 'InitialState.npz'))
         statecode = np.array(statecode['arr_0'])
@@ -795,8 +801,8 @@ class ASI_RPM():
         #print(statecode[:,1])
         battleship = plt.pcolor(corr_list)
         plt.colorbar(battleship)
-        plt.xlabel('MC sample number')
-        plt.ylabel('MC sample number')
+        plt.xlabel('Random initial microstate sample number')
+        plt.ylabel('Random initial microstate sample number')
         plt.title('Correlation between final RPM states')
         plt.figure()
         plt.plot(corr_init.flatten(), corr_list.flatten(), '.')
@@ -1004,10 +1010,10 @@ class ASI_RPM():
     
     def Hlocal2(self, x,y,n =1):
         Hl = []
-        x1 = x - 2*n
-        x2 = x + 2*n
-        y1 = y - 2*n
-        y2 = y + 2*n
+        x1 = x - n
+        x2 = x + n+1
+        y1 = y - n
+        y2 = y + n+1
 
         if x1<0:
             x1 = 0
@@ -1018,7 +1024,7 @@ class ASI_RPM():
         if y2>self.side_len_y-1:
             y2 = self.side_len_y-1
 
-        grid = self.lattice[x1:x2+1,y1:y2+1,:]
+        grid = self.lattice[x1:x2,y1:y2,:]
         m = grid[:,:,3:6]
         m = m.reshape(-1, m.shape[-1])
         r = grid[:,:,0:3]
@@ -1065,13 +1071,11 @@ class ASI_RPM():
         ax1.hist(field, normed=True, bins=np.linspace(min(field)*1.1,max(field)*1.1, num=101), alpha=1.)
         ax1.set_ylabel('Count')
         ax1.set_xlabel('Field Strength along axis (T)')
-<<<<<<< HEAD
         ax1.set_title('Dipolar Field - n='+str(n)+' nearest neighbours')
         plt.show()
 
     def latticeFieldHistogram(self, n):
         field = []
-=======
         ax1.set_title(r'Random State Dipolar Field - n=%.0f nearest neighbours' %(n))
         s = '''     mean = %.2E
             std = %.2E
@@ -1092,7 +1096,7 @@ class ASI_RPM():
         '''
         Calculates the effective coercive field at a give lattice location for n nearest neighbours
         '''
-        localField = self.Hlocal3(x,y,n=n)
+        localField = self.Hlocal2(x,y,n=n)
         unit_vector = self.lattice[x,y,3:6]
         dField = np.dot(np.array(localField), unit_vector)
         effectiveCoer = self.lattice[x,y,6]+dField
@@ -1125,7 +1129,7 @@ class ASI_RPM():
         else:
             plt.show()
 
-    def coerciveHistogram(self, n save = False):
+    def coerciveHistogram(self, n, save = False):
         '''
         Works out what the effective Coercive field is for a given lattice.
         Calculates the dipolar field for n nearest neighbours
@@ -1157,7 +1161,6 @@ class ASI_RPM():
         Plots a histogram for the field on the lattice.
         Can be set to automatically save
         '''
->>>>>>> master
         field = []
         for x in range(0, self.side_len_x):
             for y in range(0, self.side_len_y):
@@ -1629,6 +1632,10 @@ class ASI_RPM():
         self.magnetisation = new_magnetisation
 
     def fieldSweepAnalysis(self, folder):
+        '''
+        Plots the magnetisation, correlation, monopole density, and vertex population
+        graphs for the summary data
+        '''
         parameters_list = []
         Hmax_list,Htheta_list, steps_list, n_list, loops_list = [],[],[],[],[]
         Hc_list = []
