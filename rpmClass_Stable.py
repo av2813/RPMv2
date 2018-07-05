@@ -565,6 +565,9 @@ class ASI_RPM():
 
 
     def appliedFieldSweep(self, Hmin, Hmax, Hsteps, steps, Htheta, n=4, loops=5, folder = None):
+        '''
+        Will do a range of applied field sweeps 
+        '''
         Hrange = np.linspace(Hmin, Hmax, Hsteps)
         for H in Hrange:
             if folder == None:
@@ -1194,7 +1197,7 @@ class ASI_RPM():
                     field.append(np.dot(np.array(test), unit_vector))
         #print(field)
         fig, ax1 = plt.subplots(1, 1)
-        ax1.hist(field, normed=True, bins=np.linspace(min(field),max(field), num=101), alpha=1.)
+        ax1.hist(field, normed=True, bins=np.linspace(min(field),max(field), num=np.sqrt(n)), alpha=1.)
         ax1.set_ylabel('Count')
         ax1.set_xlabel('Field Strength along axis (T)')
         ax1.set_title('Dipolar Field - n='+str(n)+' nearest neighbours')
