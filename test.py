@@ -18,14 +18,23 @@ bar_width = 80e-9
 magnetisation = 800e3
 
 #Graphing and save/load test
-kagomeLattice1 = rpm.ASI_RPM(30,30,bar_length = bar_length, vertex_gap = vertex_gap, bar_thickness = bar_thickness, \
+kagomeLattice1 = rpm.ASI_RPM(5,5,bar_length = bar_length, vertex_gap = vertex_gap, bar_thickness = bar_thickness, \
         bar_width = bar_width, magnetisation = magnetisation)
-kagomeLattice1.tiltedSquare(45)
+#kagomeLattice1.tiltedSquare(45)
 #kagomeLattice1.graph()
-kagomeLattice1.randomMag()
-<<<<<<< HEAD
-kagomeLattice1.localFieldHistogram(31,30,6, 30000)
+#kagomeLattice1.randomMag()
+print('test')
+folder = r'C:\Users\av2813\Box\GitHub\RPM\RPM_Data\MCStateTest\State10'
+kagomeLattice1.fieldSweepAnimation(folder)
+l1 = kagomeLattice1.returnLattice()
+plt.figure()
+plt.scatter(l1[:,:,0].flatten(),l1[:,:,1].flatten(),c = l1[:,:,7].flatten())
+plt.xlim([0, np.max(l1[:,:,0])])
+plt.ylim([0, np.max(l1[:,:,1])])
 kagomeLattice1.graph()
+plt.show()
+#kagomeLattice1.localFieldHistogram(31,30,6, 30000)
+#kagomeLattice1.graph()
 
 #kagomeLattice1.square()
 #kagomeLattice1.randomMag()
