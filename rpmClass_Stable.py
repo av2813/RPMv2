@@ -1294,38 +1294,39 @@ class ASI_RPM():
         Type3 = np.array([-1,1,1,1])
         Type3 = np.array([1,1,-1,1])
         Type4 = np.array([1,-1,1,-1])
-        for x in np.arange(0, self.side_len_x):
-            for y in np.arange(0, self.side_len_y):
-                Corr_local = []
-                if np.isnan(grid[x,y,8])!=True:
-                    x1 = x - 3
-                    x2 = x + 4
-                    y1 = y - 3
-                    y2 = y + 4
+        if self.type =='square':
+            for x in np.arange(0, self.side_len_x):
+                for y in np.arange(0, self.side_len_y):
+                    Corr_local = []
+                    if np.isnan(grid[x,y,8])!=True:
+                        x1 = x - 3
+                        x2 = x + 4
+                        y1 = y - 3
+                        y2 = y + 4
 
-                    if x1<0:
-                        x1 = 0
-                    if x2>self.side_len_x:
-                        x2 = self.side_len_x
-                    if y1<0:
-                        y1 = 0
-                    if y2>self.side_len_y:
-                        y2 = self.side_len_y
-                    local = grid[x1:x2,y1:y2]
-                    spin_code0 = np.array([grid[x+1,y,3],grid[x-1,y,3],grid[x,y+1,4],grid[x,y-1,4]])
-                    Vertex[x,y,0:4] = spin_code0
-                    if np.array_equal(Vertex[x,y,0:4],Type1) or np.array_equal(Vertex[x,y,0:4],-1.*Type1):
-                        Vertex[x,y,4] = 1
-                    elif np.array_equal(Vertex[x,y,0:4],Type4) or np.array_equal(Vertex[x,y,0:4], -1.*Type4):
-                        Vertex[x,y,4] = 4
-                    elif np.array_equal(Vertex[x,y,0:4], Type21) or np.array_equal(Vertex[x,y,0:4], -1.*Type21) or np.array_equal(Vertex[x,y,0:4],Type22) or np.array_equal(Vertex[x,y,0:4],-1.*Type22):
-                        Vertex[x,y,4] = 2
+                        if x1<0:
+                            x1 = 0
+                        if x2>self.side_len_x:
+                            x2 = self.side_len_x
+                        if y1<0:
+                            y1 = 0
+                        if y2>self.side_len_y:
+                            y2 = self.side_len_y
+                        local = grid[x1:x2,y1:y2]
+                        spin_code0 = np.array([grid[x+1,y,3],grid[x-1,y,3],grid[x,y+1,4],grid[x,y-1,4]])
+                        Vertex[x,y,0:4] = spin_code0
+                        if np.array_equal(Vertex[x,y,0:4],Type1) or np.array_equal(Vertex[x,y,0:4],-1.*Type1):
+                            Vertex[x,y,4] = 1
+                        elif np.array_equal(Vertex[x,y,0:4],Type4) or np.array_equal(Vertex[x,y,0:4], -1.*Type4):
+                            Vertex[x,y,4] = 4
+                        elif np.array_equal(Vertex[x,y,0:4], Type21) or np.array_equal(Vertex[x,y,0:4], -1.*Type21) or np.array_equal(Vertex[x,y,0:4],Type22) or np.array_equal(Vertex[x,y,0:4],-1.*Type22):
+                            Vertex[x,y,4] = 2
+                        else:
+                            Vertex[x,y,4] = 3
                     else:
-                        Vertex[x,y,4] = 3
-                else:
-                    Vertex[x,y,:] = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
+                        Vertex[x,y,:] = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
         if self.type == 'kagome':
-            Vertex = np.array([])
+            Vertex = np.zeros((self.side_len_x, self.side_len_y, 5))
         return(Vertex)
 
     def vertexTypeMap(self):

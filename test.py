@@ -1,16 +1,17 @@
 import rpmClass_Stable as rpm
 import os
-import importlib
+from importlib import *
+
 import matplotlib.pyplot as plt
 import numpy as np
 from functools import reduce
 import time
 
-importlib.reload(rpm)		#make sure that the class is updated with any changes
+reload(rpm)		#make sure that the class is updated with any changes
 
 #parameters
 Hc = 0.062
-Hc_std = 0
+Hc_std = 0.05
 bar_length = 400e-9
 vertex_gap = 100e-9
 bar_thickness = 15e-9
@@ -18,13 +19,17 @@ bar_width = 80e-9
 magnetisation = 800e3
 
 #Graphing and save/load test
-kagomeLattice1 = rpm.ASI_RPM(5,5,bar_length = bar_length, vertex_gap = vertex_gap, bar_thickness = bar_thickness, \
+kagomeLattice1 = rpm.ASI_RPM(25,25,bar_length = bar_length, vertex_gap = vertex_gap, bar_thickness = bar_thickness, \
         bar_width = bar_width, magnetisation = magnetisation)
 #kagomeLattice1.tiltedSquare(45)
 #kagomeLattice1.graph()
 #kagomeLattice1.randomMag()
 print('test')
-folder = r'C:\Users\av2813\Box\GitHub\RPM\RPM_Data\MCStateTest\State10'
+folder = r'C:\Users\av2813\Box\GitHub\RPM\RPM_Data\KagomeHysteresis2'
+kagomeLattice1.kagome(Hc, Hc_std)
+kagomeLattice1.randomMag()
+kagomeLattice1.fieldSweep(2.*Hc, 20, 0, n=5, loops=2, folder = folder, q1 = False)
+kagomeLattice1.fieldSweepAnalysis(folder)
 kagomeLattice1.fieldSweepAnimation(folder)
 l1 = kagomeLattice1.returnLattice()
 plt.figure()
