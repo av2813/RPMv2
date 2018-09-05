@@ -403,6 +403,15 @@ class ASI_RPM():
         B *= 1e-7
         return(B)
 
+    def dumbbell(self, m, r, r0):
+        m = np.array(m)
+        r = np.array(r)
+        r0 = np.array(r0)
+        m = self.magnetisation*self.bar_length*self.bar_width*self.bar_thickness*m
+        R = np.subtract(np.transpose(r), r0).T
+
+        
+
     def fieldreturn(self, n=5):
         grid = self.lattice
         field = np.zeros((self.side_len_x,self.side_len_y,3))
